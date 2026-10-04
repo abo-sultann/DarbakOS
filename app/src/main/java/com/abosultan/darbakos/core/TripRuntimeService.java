@@ -1,6 +1,10 @@
 package com.abosultan.darbakos.core;
 
 import android.app.Service;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -14,6 +18,8 @@ import java.io.IOException;
  * One worker owns GPS callbacks and trip persistence so disk I/O never blocks Darbak UI.
  */
 public final class TripRuntimeService extends Service implements AndroidGpsSource.Callback {
+    private static final String CHANNEL_ID = "darbak_trip_runtime";
+    private static final int NOTIFICATION_ID = 2026;
     // A retiring worker must not invalidate a replacement runtime's current position.
     private static TripRuntimeService currentRuntime;
     private HandlerThread workerThread;
@@ -24,6 +30,7 @@ public final class TripRuntimeService extends Service implements AndroidGpsSourc
 
     @Override public void onCreate() {
         super.onCreate();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) enterForeground();
         workerThread = new HandlerThread("DarbakTripRuntime");
         workerThread.start();
         worker = new Handler(workerThread.getLooper());
@@ -87,6 +94,23 @@ public final class TripRuntimeService extends Service implements AndroidGpsSourc
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }
+
+    private void enterForeground() {
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, "Darbak Trip", NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription("Continuous vehicle position and trip recording");
+            manager.createNotificationChannel(channel);
+        }
+        Notification notification = new Notification.Builder(this, CHANNEL_ID)
+                .setSmallIcon(com.abosultan.darbakos.R.drawable.ic_darbak)
+                .setContentTitle("Darbak")
+                .setContentText("GPS and trip recording active")
+                .setOngoing(true)
+                .build();
+        startForeground(NOTIFICATION_ID, notification);
+    }
 
     private synchronized void enqueue(Runnable action) {
         if (!closing && worker != null) worker.post(action);
