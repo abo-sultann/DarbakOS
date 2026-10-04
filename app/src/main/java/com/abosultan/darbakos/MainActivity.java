@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.View;
@@ -277,7 +278,9 @@ public final class MainActivity extends Activity {
 
     private void startTripRuntime() {
         try {
-            startService(new Intent(this, TripRuntimeService.class));
+            Intent runtime = new Intent(this, TripRuntimeService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(runtime);
+            else startService(runtime);
         } catch (RuntimeException ignored) {
             showSpeedUnavailable(R.string.gps_unavailable);
         }
