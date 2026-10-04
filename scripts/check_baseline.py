@@ -13,8 +13,12 @@ manifest = ET.parse(main / 'AndroidManifest.xml').getroot()
 app = manifest.find('application')
 assert app.get(A + 'supportsRtl') == 'true'
 permissions = {item.get(A + 'name') for item in manifest.findall('uses-permission')}
-assert permissions == {'android.permission.ACCESS_FINE_LOCATION', 'android.permission.READ_EXTERNAL_STORAGE'}, \
-    'Only fine-location and on-demand external-media read may be runtime permissions at this checkpoint'
+assert permissions == {
+    'android.permission.ACCESS_FINE_LOCATION',
+    'android.permission.READ_EXTERNAL_STORAGE',
+    'android.permission.FOREGROUND_SERVICE',
+    'android.permission.FOREGROUND_SERVICE_LOCATION',
+}, 'Only approved location/media permissions are allowed at this checkpoint'
 
 services = {item.get(A + 'name'): item for item in app.findall('service')}
 assert set(services) == {'.core.TripRuntimeService', '.core.DarbakMediaNotificationListener'}, \
@@ -22,6 +26,8 @@ assert set(services) == {'.core.TripRuntimeService', '.core.DarbakMediaNotificat
 trip = services['.core.TripRuntimeService']
 assert trip.get(A + 'exported') == 'false' and not trip.findall('intent-filter')
 assert trip.get(A + 'process') is None
+assert trip.get(A + 'foregroundServiceType') == 'location', \
+    'Modern Trip runtime must explicitly declare the location foreground-service type'
 media = services['.core.DarbakMediaNotificationListener']
 assert media.get(A + 'exported') == 'true'
 assert media.get(A + 'permission') == 'android.permission.BIND_NOTIFICATION_LISTENER_SERVICE'
@@ -52,8 +58,11 @@ assert 'MediaSessionManager' in java and 'MediaController' in java, \
     'P5 media integration must remain explicit and platform-based'
 runtime = main / 'java/com/abosultan/darbakos/core/TripRuntimeService.java'
 media_library = main / 'java/com/abosultan/darbakos/core/LocalMediaLibrary.java'
-assert runtime.read_text().count('new HandlerThread(') == 1
-assert runtime.read_text().count('new Handler(') == 1
+runtime_text = runtime.read_text()
+assert runtime_text.count('new HandlerThread(') == 1
+assert runtime_text.count('new Handler(') == 1
+assert 'startForeground(' in runtime_text and 'NotificationChannel' in runtime_text, \
+    'Modern Trip runtime must enter foreground mode on API26+'
 assert media_library.read_text().count('new HandlerThread(') == 1
 assert media_library.read_text().count('new Handler(') == 1
 for path in main.rglob('*.java'):
@@ -61,4 +70,4 @@ for path in main.rglob('*.java'):
     assert not re.search(r'new\s+(?:Thread|Timer)\s*\(|ExecutorService|Executors\.', source), path
     if path not in (runtime, media_library):
         assert not re.search(r'new\s+(?:HandlerThread|Handler)\s*\(', source), path
-print('PASS: API25/RTL, P4 Trip runtime preserved, one system-bound media access service, no extra process/receiver/runtime dependency/native code')
+print('PASS: API25 legacy floor + modern location FGS contract, RTL, P4/P5 boundaries, no extra process/receiver/runtime dependency/native code')
