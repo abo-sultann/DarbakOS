@@ -853,3 +853,13 @@ For every test record: date, commit, environment, API/ABI/resolution, scenario, 
 - API35 `ModernHeadUnitTest` PASS after explicitly installing the androidTest APK.
 - Modern gate verifies Home and navigation surfaces (Map/Media/Vehicle/Apps/Settings) fit the actual runtime display and return to Home.
 - Physical replacement-head-unit acceptance remains pending exact hardware.
+
+
+## 2026-10-04 — P9 Software Readiness PASS
+- Verified code: `feb0fa1eebd9e22a871df9a5a423c134048cdd61`.
+- GitHub Actions run `37195999956`: SUCCESS.
+- Build + Lint PASS.
+- Legacy API25 P5-P8 focused regression PASS.
+- API35/x86_64 1920x1080 modern display/navigation gate PASS.
+- API35 portable Position/Trip/Media service contracts PASS.
+- P9 remains OPEN for the exact physical production head unit: baseline, hardware smoke, OEM/CANBUS validation, recovery-path verification, and Golden Backup.
