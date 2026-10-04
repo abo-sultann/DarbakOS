@@ -92,3 +92,10 @@ Target: t3-p3 / sun8iw11p1 / Android 7.1 API25 / ARMv7 / ~1GB / 1024x600.
 Begin P9 real-device commissioning with a non-destructive exact-device baseline and Golden Backup/recovery verification before any deep T3 integration.
 
 GitHub is the project-state authority.
+
+
+## P9 — SOFTWARE READINESS PASS / PHYSICAL COMMISSIONING PENDING
+- Modern software readiness is verified by GitHub Actions run `37195999956` at `feb0fa1eebd9e22a871df9a5a423c134048cdd61`.
+- API25 legacy regression and API35 1920x1080 modern UI/navigation plus portable Position/Trip/Media contracts pass.
+- P9 is intentionally NOT closed. Exact production-head-unit identity and physical acceptance remain pending.
+- No firmware/MCU/kernel flashing, destructive root, OEM hiding, boot replacement, or system-app removal before exact-device baseline, backup hashes, and a verified recovery path.
