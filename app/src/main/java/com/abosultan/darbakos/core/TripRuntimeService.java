@@ -1,5 +1,6 @@
 package com.abosultan.darbakos.core;
 
+import android.annotation.TargetApi;
 import android.app.Service;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -14,7 +15,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * P4 continuous position/trip runtime for Android 7.1.
+ * P4 continuous position/trip runtime with an API25 legacy floor and modern foreground mode.
  * One worker owns GPS callbacks and trip persistence so disk I/O never blocks Darbak UI.
  */
 public final class TripRuntimeService extends Service implements AndroidGpsSource.Callback {
@@ -30,7 +31,7 @@ public final class TripRuntimeService extends Service implements AndroidGpsSourc
 
     @Override public void onCreate() {
         super.onCreate();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) enterForeground();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) enterForegroundApi26();
         workerThread = new HandlerThread("DarbakTripRuntime");
         workerThread.start();
         worker = new Handler(workerThread.getLooper());
@@ -95,7 +96,8 @@ public final class TripRuntimeService extends Service implements AndroidGpsSourc
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
-    private void enterForeground() {
+    @TargetApi(Build.VERSION_CODES.O)
+    private void enterForegroundApi26() {
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (manager != null) {
             NotificationChannel channel = new NotificationChannel(
