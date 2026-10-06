@@ -2,11 +2,12 @@ plugins { id 'com.android.application' }
 
 android {
     namespace 'com.abosultan.darbakos.mediafixture'
-    compileSdk 35
+    compileSdk 37
 
     defaultConfig {
         applicationId 'com.abosultan.darbakos.mediafixture'
         minSdk 25
+        // Intentionally legacy-targeted fixture to keep external-player compatibility coverage.
         targetSdk 25
         versionCode 1
         versionName '1.0'
