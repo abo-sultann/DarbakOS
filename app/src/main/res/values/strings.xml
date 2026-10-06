@@ -20,6 +20,7 @@
     <string name="gps_live">GPS • مباشر</string>
     <string name="gps_unavailable">GPS • غير متاح</string>
     <string name="gps_permission_needed">GPS • يحتاج إذن الموقع</string>
+    <string name="gps_precise_permission_needed">GPS • يحتاج الموقع الدقيق للسرعة وتسجيل الرحلة</string>
     <string name="navigation_title">مساحتك على الطريق</string>
     <string name="navigation_detail">الخريطة والملاحة</string>
     <string name="navigation_state">الملاحة • غير متاحة</string>
@@ -81,8 +82,8 @@
     <string name="apps_recent_test">الأخيرة</string>
     <string name="apps_favorite_test">المفضلة</string>
     <string name="apps_manage_test">إدارة التطبيقات</string>
-    <string name="media_local_not_scanned">مكتبة USB / SD جاهزة للفحص</string>
-    <string name="media_local_scan">تحديث مكتبة USB / SD</string>
+    <string name="media_local_not_scanned">مكتبة الجهاز / USB / SD جاهزة للفحص</string>
+    <string name="media_local_scan">تحديث مكتبة الصوت</string>
     <string name="media_local_scanning">جاري فحص ملفات الصوت…</string>
     <string name="media_local_empty">لا توجد ملفات صوت متاحة</string>
     <string name="media_local_count">%1$d ملف صوت</string>
@@ -95,7 +96,7 @@
     <string name="apps_manage">إدارة التطبيقات</string>
     <string name="apps_none">لا توجد تطبيقات قابلة للتشغيل خارج دربك.</string>
     <string name="apps_found">%1$d تطبيق • %2$s</string>
-    <string name="media_local_source">USB / SD</string>
+    <string name="media_local_source">الجهاز / USB / SD</string>
     <string name="media_local_error">تعذر تشغيل الملف</string>
     <string name="vehicle_pressure_label">ضغط الإطار: %1$s</string>
     <string name="vehicle_tire_temperature_label">حرارة الإطار: %1$s</string>
@@ -112,6 +113,9 @@
     <string name="standby_detail">واجهة هادئة فقط • GPS وتسجيل الرحلة مستمران</string>
     <string name="standby_exit_hold">اضغط مطولًا للعودة</string>
     <string name="alert_location_permission">تنبيه • فعّل إذن الموقع لاستمرار GPS وتسجيل الرحلة</string>
+    <string name="alert_location_precise">تنبيه • الموقع التقريبي لا يكفي؛ فعّل الموقع الدقيق للسرعة وتسجيل الرحلة</string>
+    <string name="alert_trip_storage_fallback">تنبيه • تعذر التخزين الخارجي؛ يستمر حفظ الرحلة بأمان في التخزين الداخلي</string>
+    <string name="alert_trip_storage_failed">تنبيه • تعذر حفظ بيانات الرحلة حاليًا</string>
     <string name="admin_title">إدارة دربك • تقني</string>
     <string name="admin_app">دربك %1$s (%2$d)</string>
     <string name="admin_device">Android %1$s • API %2$d • %3$s</string>
