@@ -14,6 +14,7 @@ app = manifest.find('application')
 assert app.get(A + 'supportsRtl') == 'true'
 permissions = {item.get(A + 'name') for item in manifest.findall('uses-permission')}
 assert permissions == {
+    'android.permission.ACCESS_COARSE_LOCATION',
     'android.permission.ACCESS_FINE_LOCATION',
     'android.permission.READ_EXTERNAL_STORAGE',
     'android.permission.FOREGROUND_SERVICE',
@@ -45,6 +46,7 @@ assert all(c.get(A + 'name') != 'android.intent.category.HOME'
            for c in activity.findall('.//category')), 'Darbak must not take over the device launcher yet'
 build = (ROOT / 'app/build.gradle').read_text()
 assert re.search(r'minSdk\s+25\b', build)
+assert re.search(r'targetSdk\s+35\b', build), 'P10 modern target must remain Android 15 / API35'
 assert not re.search(r'^\s*(?:implementation|api|runtimeOnly)\b', build, re.M)
 assert not list(main.rglob('*.so')), 'No native ABI dependency expected'
 strings = ET.parse(main / 'res/values/strings.xml').getroot()
@@ -70,4 +72,4 @@ for path in main.rglob('*.java'):
     assert not re.search(r'new\s+(?:Thread|Timer)\s*\(|ExecutorService|Executors\.', source), path
     if path not in (runtime, media_library):
         assert not re.search(r'new\s+(?:HandlerThread|Handler)\s*\(', source), path
-print('PASS: API25 legacy floor + modern location FGS contract, RTL, P4/P5 boundaries, no extra process/receiver/runtime dependency/native code')
+print('PASS: API25 legacy floor + API35 modern location FGS contract, RTL, P4/P5 boundaries, no extra process/receiver/runtime dependency/native code')
