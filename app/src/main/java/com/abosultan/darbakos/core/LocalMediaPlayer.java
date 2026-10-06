@@ -1,8 +1,8 @@
 package com.abosultan.darbakos.core;
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.content.Context;
 
 import java.io.IOException;
 
@@ -10,6 +10,7 @@ import java.io.IOException;
 public final class LocalMediaPlayer {
     public interface Listener { void onState(LocalMediaTrack track, boolean playing, boolean error); }
 
+    private final Context context;
     private MediaPlayer player;
     private LocalMediaTrack current;
     private final Listener listener;
@@ -31,13 +32,15 @@ public final class LocalMediaPlayer {
     };
 
     public LocalMediaPlayer(Context context, Listener listener) {
+        this.context = context.getApplicationContext();
         this.listener = listener;
-        this.audioManager = (AudioManager) context.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        this.audioManager = (AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
     }
 
     public void play(LocalMediaTrack track) {
-        if (track == null || track.file == null || !track.file.isFile()) {
-            publish(track, false, true); return;
+        if (track == null || (track.uri == null && (track.file == null || !track.file.isFile()))) {
+            publish(track, false, true);
+            return;
         }
         releasePlayer();
         if (!requestFocus()) { publish(track, false, true); return; }
@@ -47,7 +50,8 @@ public final class LocalMediaPlayer {
         preparing = true;
         try {
             next.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            next.setDataSource(track.file.getAbsolutePath());
+            if (track.uri != null) next.setDataSource(context, track.uri);
+            else next.setDataSource(track.file.getAbsolutePath());
             next.setOnPreparedListener(mp -> {
                 if (player != mp) return;
                 preparing = false;
@@ -76,11 +80,17 @@ public final class LocalMediaPlayer {
         }
     }
 
+    /** Toggles the existing MediaPlayer instance, preserving its current playback position. */
     public void playPause() {
         if (player == null || preparing) return;
         try {
-            if (player.isPlaying()) { player.pause(); abandonFocus(); }
-            else { if (!requestFocus()) return; player.start(); }
+            if (player.isPlaying()) {
+                player.pause();
+                abandonFocus();
+            } else {
+                if (!requestFocus()) return;
+                player.start();
+            }
             publish(current, player.isPlaying(), false);
         } catch (IllegalStateException e) { publish(current, false, true); }
     }
@@ -135,7 +145,9 @@ public final class LocalMediaPlayer {
     }
 
     private void releasePlayer() {
-        MediaPlayer old = player; player = null; preparing = false;
+        MediaPlayer old = player;
+        player = null;
+        preparing = false;
         if (old != null) try { old.release(); } catch (RuntimeException ignored) {}
     }
 
