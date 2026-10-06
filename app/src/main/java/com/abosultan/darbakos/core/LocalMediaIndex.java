@@ -80,7 +80,7 @@ public final class LocalMediaIndex {
         try {
             descriptor = context.getContentResolver().openAssetFileDescriptor(uri, "r");
             return descriptor != null;
-        } catch (IOException | SecurityException | RuntimeException ignored) {
+        } catch (IOException | RuntimeException ignored) {
             return false;
         } finally {
             if (descriptor != null) {
