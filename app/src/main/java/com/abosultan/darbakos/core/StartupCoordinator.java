@@ -7,10 +7,9 @@ import android.os.Build;
 /**
  * Single boundary for Darbak runtime startup policy.
  *
- * P10 intentionally enables only a foreground USER_LAUNCH. Future OEM/ACC or
- * boot integrations must enter through this boundary after the exact head unit
- * and its recovery path are verified; they must not be hidden in Activities or
- * generic broadcast receivers.
+ * Portable P10 startup is deliberately limited to a visible user launch with precise location.
+ * OEM ACC/boot integrations stay blocked until the exact production head unit is known and
+ * validated; they must enter through this boundary rather than generic broadcast receivers.
  */
 public final class StartupCoordinator {
     public enum Trigger {
@@ -25,11 +24,21 @@ public final class StartupCoordinator {
         return trigger == Trigger.USER_LAUNCH;
     }
 
-    public static boolean startPortableRuntime(Context context, Trigger trigger) {
-        if (context == null || !isPortableTrigger(trigger)) return false;
+    public static boolean canStart(Trigger trigger, boolean activityVisible,
+                                   boolean preciseLocationGranted) {
+        return isPortableTrigger(trigger)
+                && RuntimeStartPolicy.allowActivityStart(activityVisible, preciseLocationGranted);
+    }
+
+    public static boolean startPortableRuntime(Context context, Trigger trigger,
+                                               boolean activityVisible,
+                                               boolean preciseLocationGranted) {
+        if (context == null || !canStart(trigger, activityVisible, preciseLocationGranted)) {
+            return false;
+        }
         Intent runtime = new Intent(context, TripRuntimeService.class);
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (RuntimeStartPolicy.useForegroundServiceStart(Build.VERSION.SDK_INT)) {
                 context.startForegroundService(runtime);
             } else {
                 context.startService(runtime);
@@ -38,5 +47,13 @@ public final class StartupCoordinator {
         } catch (RuntimeException ignored) {
             return false;
         }
+    }
+
+    /** Used when a visible Activity observes that precise permission has been revoked. */
+    public static void stopPortableRuntime(Context context) {
+        if (context == null) return;
+        try {
+            context.stopService(new Intent(context, TripRuntimeService.class));
+        } catch (RuntimeException ignored) { }
     }
 }
