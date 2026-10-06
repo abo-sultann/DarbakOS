@@ -1,5 +1,6 @@
 package com.abosultan.darbakos.core;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
 
@@ -20,12 +21,25 @@ public final class LocalMediaLibrary {
         handler = new Handler(worker.getLooper());
     }
 
+    /** Legacy file-root scan retained for API25-focused regression tests. */
     public void scan(List<File> roots, Callback callback) {
         start();
         if (handler == null || callback == null) return;
         final int request = ++generation;
         handler.post(() -> {
             List<LocalMediaTrack> tracks = new LocalMediaScanner().scan(roots);
+            if (!closed && request == generation) callback.onScanned(tracks);
+        });
+    }
+
+    /** Primary P10 path: query user/shared/removable audio through MediaStore off the UI thread. */
+    public void scanSharedAudio(Context context, Callback callback) {
+        start();
+        if (handler == null || context == null || callback == null) return;
+        Context appContext = context.getApplicationContext();
+        final int request = ++generation;
+        handler.post(() -> {
+            List<LocalMediaTrack> tracks = new MediaStoreAudioScanner().scan(appContext);
             if (!closed && request == generation) callback.onScanned(tracks);
         });
     }
