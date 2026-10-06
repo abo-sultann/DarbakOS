@@ -6,8 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.os.Bundle;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.View;
@@ -16,21 +16,24 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.abosultan.darbakos.core.CoreStateStore;
+import com.abosultan.darbakos.core.LocalMediaIndex;
+import com.abosultan.darbakos.core.LocalMediaLibrary;
+import com.abosultan.darbakos.core.LocalMediaPlayer;
+import com.abosultan.darbakos.core.LocalMediaQueue;
+import com.abosultan.darbakos.core.LocalMediaState;
+import com.abosultan.darbakos.core.LocalMediaTrack;
+import com.abosultan.darbakos.core.LocationPermissionPolicy;
+import com.abosultan.darbakos.core.MediaPermissionPolicy;
 import com.abosultan.darbakos.core.MediaSessionBridge;
 import com.abosultan.darbakos.core.MediaSnapshot;
 import com.abosultan.darbakos.core.OsmAndBridge;
 import com.abosultan.darbakos.core.OsmAndNavigationSnapshot;
 import com.abosultan.darbakos.core.PositionFix;
 import com.abosultan.darbakos.core.PositionStore;
-import com.abosultan.darbakos.core.TripRuntimeService;
-import com.abosultan.darbakos.core.UpdatePackageInspector;
 import com.abosultan.darbakos.core.RecoveryReadiness;
-import com.abosultan.darbakos.core.VehicleDataStore;
-import com.abosultan.darbakos.core.VehicleSnapshot;
-import com.abosultan.darbakos.core.VehicleValue;
-import com.abosultan.darbakos.core.VehicleDataStore;
-import com.abosultan.darbakos.core.VehicleSnapshot;
-import com.abosultan.darbakos.core.VehicleValue;
+import com.abosultan.darbakos.core.StartupCoordinator;
+import com.abosultan.darbakos.core.TripStorageState;
+import com.abosultan.darbakos.core.UpdatePackageInspector;
 import com.abosultan.darbakos.core.VehicleDataStore;
 import com.abosultan.darbakos.core.VehicleSnapshot;
 import com.abosultan.darbakos.core.VehicleValue;
@@ -38,17 +41,8 @@ import com.abosultan.darbakos.core.VehicleValue;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-
-import com.abosultan.darbakos.core.LocalMediaIndex;
-import com.abosultan.darbakos.core.LocalMediaLibrary;
-import com.abosultan.darbakos.core.LocalMediaPlayer;
-import com.abosultan.darbakos.core.LocalMediaQueue;
-import com.abosultan.darbakos.core.LocalMediaScanner;
-import com.abosultan.darbakos.core.LocalMediaState;
-import com.abosultan.darbakos.core.LocalMediaTrack;
 
 /** Darbak OS shell for continuous position/trip, OsmAnd and user-triggered external media control. */
 public final class MainActivity extends Activity {
@@ -99,9 +93,13 @@ public final class MainActivity extends Activity {
         }
     };
 
+    private final TripStorageState.Listener tripStorageListener = status ->
+            runOnUiThread(this::renderActionableAlert);
+
     private int section;
     private boolean standby;
     private boolean permissionRequested;
+    private boolean activityStarted;
     private boolean refreshRouteWhenResumed;
     private boolean infoRequestInFlight;
     private boolean osmandLaunchable;
@@ -176,9 +174,13 @@ public final class MainActivity extends Activity {
 
         findViewById(R.id.media_access_button).setOnClickListener(v -> openMediaAccessSettings());
         findViewById(R.id.media_play_pause_button).setOnClickListener(v -> {
-            if (externalMediaActive()) mediaBridge.playPause();
-            else if (localQueue.current() != null) {
-                if (localPlaying) localPlayer.playPause(); else localPlayer.play(localQueue.current());
+            if (externalMediaActive()) {
+                mediaBridge.playPause();
+            } else if (localPlayer.currentTrack() != null) {
+                // Toggle the existing player so a paused track resumes at its current position.
+                localPlayer.playPause();
+            } else if (localQueue.current() != null) {
+                localPlayer.play(localQueue.current());
             }
         });
         findViewById(R.id.media_previous_button).setOnClickListener(v -> {
@@ -206,19 +208,25 @@ public final class MainActivity extends Activity {
 
     @Override protected void onStart() {
         super.onStart();
+        activityStarted = true;
         PositionStore.get().addListener(positionListener);
+        TripStorageState.get().addListener(tripStorageListener);
         if (mediaBridge != null) mediaBridge.start();
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
+
+        LocationPermissionPolicy.Access access = locationAccess();
+        if (access == LocationPermissionPolicy.Access.PRECISE) {
+            showSpeedUnavailable(R.string.gps_waiting);
             startTripRuntime();
         } else {
-            showSpeedUnavailable(R.string.gps_permission_needed);
+            StartupCoordinator.stopPortableRuntime(this);
+            showSpeedUnavailable(access == LocationPermissionPolicy.Access.APPROXIMATE
+                    ? R.string.gps_precise_permission_needed : R.string.gps_permission_needed);
             if (!permissionRequested) {
                 permissionRequested = true;
-                requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
-                        REQUEST_LOCATION);
+                requestPermissions(LocationPermissionPolicy.requestPermissions(), REQUEST_LOCATION);
             }
         }
+        renderActionableAlert();
     }
 
     @Override protected void onResume() {
@@ -240,7 +248,9 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onStop() {
+        activityStarted = false;
         PositionStore.get().removeListener(positionListener);
+        TripStorageState.get().removeListener(tripStorageListener);
         if (mediaBridge != null) mediaBridge.stop();
         super.onStop();
     }
@@ -249,16 +259,21 @@ public final class MainActivity extends Activity {
                                                       int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_MEDIA_STORAGE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) scanLocalMedia();
+            String permission = MediaPermissionPolicy.requiredPermission(Build.VERSION.SDK_INT);
+            if (checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) scanLocalMedia();
             return;
         }
         if (requestCode != REQUEST_LOCATION) return;
+
+        LocationPermissionPolicy.Access access = locationAccess();
         renderActionableAlert();
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (access == LocationPermissionPolicy.Access.PRECISE) {
             showSpeedUnavailable(R.string.gps_waiting);
             startTripRuntime();
         } else {
-            showSpeedUnavailable(R.string.gps_permission_needed);
+            StartupCoordinator.stopPortableRuntime(this);
+            showSpeedUnavailable(access == LocationPermissionPolicy.Access.APPROXIMATE
+                    ? R.string.gps_precise_permission_needed : R.string.gps_permission_needed);
         }
     }
 
@@ -276,14 +291,21 @@ public final class MainActivity extends Activity {
         if (section == 1) refreshMapLocationAction();
     }
 
+    private LocationPermissionPolicy.Access locationAccess() {
+        boolean coarse = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean fine = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        return LocationPermissionPolicy.evaluate(coarse, fine);
+    }
+
     private void startTripRuntime() {
-        try {
-            Intent runtime = new Intent(this, TripRuntimeService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(runtime);
-            else startService(runtime);
-        } catch (RuntimeException ignored) {
-            showSpeedUnavailable(R.string.gps_unavailable);
-        }
+        boolean started = StartupCoordinator.startPortableRuntime(
+                this,
+                StartupCoordinator.Trigger.USER_LAUNCH,
+                activityStarted,
+                locationAccess() == LocationPermissionPolicy.Access.PRECISE);
+        if (!started) showSpeedUnavailable(R.string.gps_unavailable);
     }
 
     private void openOsmAnd() {
@@ -379,7 +401,8 @@ public final class MainActivity extends Activity {
         findViewById(R.id.vehicle_panel).setVisibility(vehicle ? View.VISIBLE : View.GONE);
         findViewById(R.id.settings_panel).setVisibility(settings ? View.VISIBLE : View.GONE);
         findViewById(R.id.admin_panel).setVisibility(View.GONE);
-        findViewById(R.id.section_panel).setVisibility(!home && !map && !media && !vehicle && !settings ? View.VISIBLE : View.GONE);
+        findViewById(R.id.section_panel).setVisibility(
+                !home && !map && !media && !vehicle && !settings ? View.VISIBLE : View.GONE);
         findViewById(R.id.apps_preview).setVisibility(section == 4 ? View.VISIBLE : View.GONE);
 
         if (!home && !map && !media && !vehicle && !settings) {
@@ -401,18 +424,38 @@ public final class MainActivity extends Activity {
         }
     }
 
-
     private void renderActionableAlert() {
-        renderActionableAlertState(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED);
+        renderActionableAlertState(locationAccess(), TripStorageState.get().status());
     }
 
     void renderActionableAlertState(boolean locationGranted) {
-        TextView alert = (TextView) findViewById(R.id.actionable_alert);
-        alert.setText(locationGranted ? "" : getString(R.string.alert_location_permission));
-        alert.setVisibility(locationGranted ? View.GONE : View.VISIBLE);
+        renderActionableAlertState(
+                locationGranted ? LocationPermissionPolicy.Access.PRECISE
+                        : LocationPermissionPolicy.Access.DENIED,
+                TripStorageState.Status.UNINITIALIZED);
     }
 
+    void renderActionableAlertState(LocationPermissionPolicy.Access access,
+                                    TripStorageState.Status storageStatus) {
+        TextView alert = (TextView) findViewById(R.id.actionable_alert);
+        int message = 0;
+        if (access == LocationPermissionPolicy.Access.DENIED) {
+            message = R.string.alert_location_permission;
+        } else if (access == LocationPermissionPolicy.Access.APPROXIMATE) {
+            message = R.string.alert_location_precise;
+        } else if (storageStatus == TripStorageState.Status.WRITE_FAILED) {
+            message = R.string.alert_trip_storage_failed;
+        } else if (storageStatus == TripStorageState.Status.INTERNAL_FALLBACK) {
+            message = R.string.alert_trip_storage_fallback;
+        }
+        if (message == 0) {
+            alert.setText("");
+            alert.setVisibility(View.GONE);
+        } else {
+            alert.setText(message);
+            alert.setVisibility(View.VISIBLE);
+        }
+    }
 
     private void showAdmin() {
         findViewById(R.id.settings_panel).setVisibility(View.GONE);
@@ -449,10 +492,10 @@ public final class MainActivity extends Activity {
         RecoveryReadiness readiness = RecoveryReadiness.evaluate("", "", false);
         int text;
         switch (readiness.state) {
-            case LOCKED_NO_HASH: text=R.string.admin_recovery_no_hash; break;
-            case LOCKED_PATH_UNVERIFIED: text=R.string.admin_recovery_path_unverified; break;
-            case ELIGIBLE: text=R.string.admin_recovery_eligible; break;
-            default: text=R.string.admin_recovery_no_backup;
+            case LOCKED_NO_HASH: text = R.string.admin_recovery_no_hash; break;
+            case LOCKED_PATH_UNVERIFIED: text = R.string.admin_recovery_path_unverified; break;
+            case ELIGIBLE: text = R.string.admin_recovery_eligible; break;
+            default: text = R.string.admin_recovery_no_backup;
         }
         ((TextView) findViewById(R.id.admin_recovery_readiness)).setText(text);
     }
@@ -462,10 +505,12 @@ public final class MainActivity extends Activity {
         TextView view = (TextView) findViewById(R.id.admin_update_inspection);
         if (!candidate.isFile()) { view.setText(R.string.admin_update_none); return; }
         UpdatePackageInspector.Result result = UpdatePackageInspector.inspect(this, candidate);
-        String shortHash = result.sha256.length() >= 12 ? result.sha256.substring(0, 12) : result.sha256;
+        String shortHash = result.sha256.length() >= 12
+                ? result.sha256.substring(0, 12) : result.sha256;
         if (result.state == UpdatePackageInspector.State.COMPATIBLE) {
             view.setText(getString(R.string.admin_update_ok,
-                    result.versionName.length() == 0 ? String.valueOf(result.versionCode) : result.versionName,
+                    result.versionName.length() == 0
+                            ? String.valueOf(result.versionCode) : result.versionName,
                     result.size, shortHash));
         } else if (result.state == UpdatePackageInspector.State.INCOMPATIBLE) {
             view.setText(getString(R.string.admin_update_bad, result.packageName, shortHash));
@@ -495,7 +540,6 @@ public final class MainActivity extends Activity {
         showSection(0);
     }
 
-
     private SharedPreferences userPrefs() {
         return getSharedPreferences(USER_PREFS, MODE_PRIVATE);
     }
@@ -510,7 +554,8 @@ public final class MainActivity extends Activity {
         View button = findViewById(R.id.settings_speed_button);
         if (!(button instanceof TextView)) return;
         boolean showSpeed = userPrefs().getBoolean(PREF_SHOW_SPEED, true);
-        ((TextView) button).setText(showSpeed ? R.string.settings_speed_show : R.string.settings_speed_hide);
+        ((TextView) button).setText(
+                showSpeed ? R.string.settings_speed_show : R.string.settings_speed_hide);
     }
 
     private void toggleSpeedCard() {
@@ -520,14 +565,14 @@ public final class MainActivity extends Activity {
         renderSettingsState();
     }
 
-
     private void renderAppsState() {
         PackageManager pm = getPackageManager();
         Intent launcher = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> resolved = pm.queryIntentActivities(launcher, 0);
         List<String> labels = new ArrayList<>();
         for (ResolveInfo info : resolved) {
-            if (info.activityInfo == null || getPackageName().equals(info.activityInfo.packageName)) continue;
+            if (info.activityInfo == null
+                    || getPackageName().equals(info.activityInfo.packageName)) continue;
             CharSequence label = info.loadLabel(pm);
             labels.add(label == null ? info.activityInfo.packageName : label.toString());
         }
@@ -562,13 +607,17 @@ public final class MainActivity extends Activity {
         } catch (RuntimeException ignored) { }
     }
 
-
     private void renderVehicleState() {
-        VehicleSnapshot s = vehicleDataStore.snapshot(System.currentTimeMillis(), VEHICLE_SNAPSHOT_FRESH_MS);
-        ((TextView) findViewById(R.id.vehicle_pressure)).setText(getString(R.string.vehicle_pressure_label, vehicleText(s.tirePressure)));
-        ((TextView) findViewById(R.id.vehicle_tire_temperature)).setText(getString(R.string.vehicle_tire_temperature_label, vehicleText(s.tireTemperature)));
-        ((TextView) findViewById(R.id.vehicle_fridge_temperature)).setText(getString(R.string.vehicle_fridge_temperature_label, vehicleText(s.fridgeTemperature)));
-        VehicleValue v = s.tirePressure.available() ? s.tirePressure : (s.tireTemperature.available() ? s.tireTemperature : s.fridgeTemperature);
+        VehicleSnapshot s = vehicleDataStore.snapshot(
+                System.currentTimeMillis(), VEHICLE_SNAPSHOT_FRESH_MS);
+        ((TextView) findViewById(R.id.vehicle_pressure)).setText(
+                getString(R.string.vehicle_pressure_label, vehicleText(s.tirePressure)));
+        ((TextView) findViewById(R.id.vehicle_tire_temperature)).setText(
+                getString(R.string.vehicle_tire_temperature_label, vehicleText(s.tireTemperature)));
+        ((TextView) findViewById(R.id.vehicle_fridge_temperature)).setText(
+                getString(R.string.vehicle_fridge_temperature_label, vehicleText(s.fridgeTemperature)));
+        VehicleValue v = s.tirePressure.available() ? s.tirePressure
+                : (s.tireTemperature.available() ? s.tireTemperature : s.fridgeTemperature);
         ((TextView) findViewById(R.id.vehicle_source)).setText(v.available()
                 ? getString(R.string.vehicle_source_label, v.source.name())
                 : getString(R.string.vehicle_source_none));
@@ -643,42 +692,38 @@ public final class MainActivity extends Activity {
     private boolean hasLocalTrack() { return localQueue.current() != null; }
 
     private void scanLocalMedia() {
-        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, REQUEST_MEDIA_STORAGE);
+        String permission = MediaPermissionPolicy.requiredPermission(Build.VERSION.SDK_INT);
+        if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] { permission }, REQUEST_MEDIA_STORAGE);
             return;
         }
         ((TextView) findViewById(R.id.media_local_summary)).setText(R.string.media_local_scanning);
         findViewById(R.id.media_local_scan_button).setEnabled(false);
-        List<File> roots = new ArrayList<>();
-        File[] external = getExternalFilesDirs(null);
-        if (external != null) for (File dir : external) {
-            if (dir == null) continue;
-            File root = dir;
-            for (int i = 0; i < 4 && root.getParentFile() != null; i++) root = root.getParentFile();
-            if (root.canRead()) roots.add(root);
-        }
-        localLibrary.scan(roots, tracks -> runOnUiThread(() -> {
-                localQueue.replace(tracks);
-                localIndex.save(tracks);
-                localState.restoreSelection(localQueue);
-                TextView summary = (TextView) findViewById(R.id.media_local_summary);
-                if (tracks.isEmpty()) summary.setText(R.string.media_local_empty);
-                else summary.setText(getString(R.string.media_local_count, tracks.size()));
-                findViewById(R.id.media_local_scan_button).setEnabled(true);
-                renderLocalMediaState(localQueue.current(), false);
-            }));
+        localLibrary.scanSharedAudio(this, tracks -> runOnUiThread(() -> {
+            if (tracks.isEmpty() && localPlayer.currentTrack() != null) localPlayer.stop();
+            localQueue.replace(tracks);
+            localIndex.save(tracks);
+            localState.restoreSelection(localQueue);
+            TextView summary = (TextView) findViewById(R.id.media_local_summary);
+            if (tracks.isEmpty()) summary.setText(R.string.media_local_empty);
+            else summary.setText(getString(R.string.media_local_count, tracks.size()));
+            findViewById(R.id.media_local_scan_button).setEnabled(true);
+            renderLocalMediaState(localQueue.current(), false);
+        }));
     }
 
     private void renderLocalMediaState(LocalMediaTrack track, boolean error) {
         if (track == null || externalMediaActive()) { renderLocalControls(); return; }
         ((TextView) findViewById(R.id.media_track)).setText(track.title);
         ((TextView) findViewById(R.id.media_state)).setText(error
-                ? R.string.media_local_error : localPlaying ? R.string.media_playing : R.string.media_stopped);
+                ? R.string.media_local_error
+                : localPlaying ? R.string.media_playing : R.string.media_stopped);
         ((TextView) findViewById(R.id.media_now_title)).setText(track.title);
         ((TextView) findViewById(R.id.media_now_artist)).setText(track.artist.length() == 0
                 ? getString(R.string.media_local_source) : track.artist);
         ((TextView) findViewById(R.id.media_now_status)).setText(error
-                ? R.string.media_local_error : localPlaying ? R.string.media_playing : R.string.media_stopped);
+                ? R.string.media_local_error
+                : localPlaying ? R.string.media_playing : R.string.media_stopped);
         renderLocalControls();
     }
 
@@ -799,7 +844,8 @@ public final class MainActivity extends Activity {
         if (minutes < 60) return minutes + " د";
         int hours = minutes / 60;
         int remainingMinutes = minutes % 60;
-        return remainingMinutes == 0 ? hours + " س" : hours + " س " + remainingMinutes + " د";
+        return remainingMinutes == 0
+                ? hours + " س" : hours + " س " + remainingMinutes + " د";
     }
 
     private void setMapFeedback(String message) {
