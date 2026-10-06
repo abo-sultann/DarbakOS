@@ -6,7 +6,8 @@ import android.content.SharedPreferences;
 /** Persists selection only. Restoring state never starts playback. */
 public final class LocalMediaState {
     private static final String PREFS = "darbak_local_media";
-    private static final String KEY_PATH = "selected_path";
+    private static final String KEY_IDENTITY = "selected_identity";
+    private static final String LEGACY_KEY_PATH = "selected_path";
     private final SharedPreferences prefs;
 
     public LocalMediaState(Context context) {
@@ -14,19 +15,31 @@ public final class LocalMediaState {
     }
 
     public void remember(LocalMediaTrack track) {
-        if (track == null || track.file == null) prefs.edit().remove(KEY_PATH).apply();
-        else prefs.edit().putString(KEY_PATH, track.file.getAbsolutePath()).apply();
+        SharedPreferences.Editor edit = prefs.edit();
+        if (track == null) edit.remove(KEY_IDENTITY);
+        else edit.putString(KEY_IDENTITY, track.identity());
+        edit.remove(LEGACY_KEY_PATH).apply();
     }
 
-    public String selectedPath() { return prefs.getString(KEY_PATH, ""); }
+    public String selectedIdentity() {
+        String identity = prefs.getString(KEY_IDENTITY, "");
+        if (identity == null || identity.isEmpty()) {
+            identity = prefs.getString(LEGACY_KEY_PATH, "");
+        }
+        return identity == null ? "" : identity;
+    }
+
+    /** Legacy accessor retained for focused tests and migration compatibility. */
+    public String selectedPath() { return selectedIdentity(); }
 
     public int restoreSelection(LocalMediaQueue queue) {
-        String wanted = selectedPath();
+        String wanted = selectedIdentity();
         if (wanted.isEmpty() || queue == null) return -1;
         for (int i = 0; i < queue.tracks().size(); i++) {
             LocalMediaTrack track = queue.tracks().get(i);
-            if (track.file != null && wanted.equals(track.file.getAbsolutePath())) {
-                queue.select(i); return i;
+            if (track != null && wanted.equals(track.identity())) {
+                queue.select(i);
+                return i;
             }
         }
         return -1;
