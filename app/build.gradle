@@ -7,9 +7,9 @@ android {
     defaultConfig {
         applicationId 'com.abosultan.darbakos.test'
         minSdk 25
-        targetSdk 25
+        targetSdk 35
         versionCode 1
-        versionName '0.1.0-p1'
+        versionName '0.1.0-p10'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     compileOptions {
@@ -19,8 +19,6 @@ android {
     lint {
         abortOnError true
         warningsAsErrors false
-        // P1 is an API25 sideload test, not a Google Play submission.
-        disable 'ExpiredTargetSdkVersion'
     }
 }
 
