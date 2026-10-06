@@ -21,8 +21,12 @@ public final class StartupCoordinator {
 
     private StartupCoordinator() { }
 
+    public static boolean isPortableTrigger(Trigger trigger) {
+        return trigger == Trigger.USER_LAUNCH;
+    }
+
     public static boolean startPortableRuntime(Context context, Trigger trigger) {
-        if (context == null || trigger != Trigger.USER_LAUNCH) return false;
+        if (context == null || !isPortableTrigger(trigger)) return false;
         Intent runtime = new Intent(context, TripRuntimeService.class);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
