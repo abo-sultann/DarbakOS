@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Environment;
 
 import java.io.File;
+import java.io.IOException;
 
 /** Chooses app-owned trip storage, preferring writable removable/external storage. */
 public final class TripStorageLocator {
@@ -24,8 +25,16 @@ public final class TripStorageLocator {
                 }
             }
         }
-        File fallback = new File(context.getFilesDir(), "trips");
-        return select(external, removable, fallback);
+        return select(external, removable, internal(context));
+    }
+
+    public static File internal(Context context) {
+        if (context == null) throw new IllegalArgumentException("context");
+        return new File(context.getFilesDir(), "trips");
+    }
+
+    public static boolean isInternal(Context context, File directory) {
+        return same(directory, internal(context));
     }
 
     /** Pure ordering rule: writable removable first, then writable external, then fallback. */
@@ -44,13 +53,22 @@ public final class TripStorageLocator {
         return null;
     }
 
-    private static boolean prepare(File directory) {
+    public static boolean prepare(File directory) {
         if (directory == null) return false;
         try {
             if (!directory.exists() && !directory.mkdirs()) return false;
             return directory.isDirectory() && directory.canWrite();
         } catch (RuntimeException ignored) {
             return false;
+        }
+    }
+
+    private static boolean same(File first, File second) {
+        if (first == null || second == null) return false;
+        try {
+            return first.getCanonicalFile().equals(second.getCanonicalFile());
+        } catch (IOException ignored) {
+            return first.getAbsolutePath().equals(second.getAbsolutePath());
         }
     }
 }
