@@ -1,5 +1,7 @@
 package com.abosultan.darbakos.core;
 
+import android.os.SystemClock;
+
 import java.util.ArrayList;
 
 /** Process-local latest position publication used by the GPS runtime and final Home UI. */
@@ -19,7 +21,16 @@ public final class PositionStore {
     private PositionStore() { }
 
     public synchronized PositionFix latest() { return state.latest(); }
-    public synchronized boolean available() { return available && state.available(); }
+
+    public synchronized boolean available() {
+        return availableAt(SystemClock.elapsedRealtime());
+    }
+
+    /** Pure-time overload used by focused tests and the runtime expiry check. */
+    public synchronized boolean availableAt(long nowMonotonicMs) {
+        return available && state.available()
+                && PositionQualityPolicy.isFresh(state.latest(), nowMonotonicMs);
+    }
 
     public void addListener(Listener listener) {
         if (listener == null) return;
@@ -28,7 +39,8 @@ public final class PositionStore {
         synchronized (this) {
             if (!listeners.contains(listener)) listeners.add(listener);
             current = state.latest();
-            currentAvailable = available && current != null;
+            currentAvailable = available && PositionQualityPolicy.isFresh(
+                    current, SystemClock.elapsedRealtime());
         }
         if (currentAvailable) listener.onPosition(current);
         else listener.onUnavailable();
@@ -49,13 +61,31 @@ public final class PositionStore {
     }
 
     public void publishUnavailable() {
+        setUnavailableIfNeeded();
+    }
+
+    /**
+     * Expires a source that stopped producing callbacks while the GPS provider remains enabled.
+     * Returns true only when this call changed the public state to unavailable.
+     */
+    public boolean expireIfStale(long nowMonotonicMs) {
+        synchronized (this) {
+            if (!available || PositionQualityPolicy.isFresh(state.latest(), nowMonotonicMs)) {
+                return false;
+            }
+        }
+        return setUnavailableIfNeeded();
+    }
+
+    private boolean setUnavailableIfNeeded() {
         ArrayList<Listener> copy;
         synchronized (this) {
-            if (!available) return;
+            if (!available) return false;
             available = false;
             copy = new ArrayList<>(listeners);
         }
         for (Listener listener : copy) listener.onUnavailable();
+        return true;
     }
 
     public synchronized void resetForColdBoot() {
