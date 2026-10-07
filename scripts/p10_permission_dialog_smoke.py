@@ -40,7 +40,6 @@ def clean_install():
     assert not permission_granted(COARSE), "coarse location unexpectedly pre-granted"
     assert not permission_granted(FINE), "fine location unexpectedly pre-granted"
     adb("shell", "am", "start", "-W", "-n", ACTIVITY)
-    time.sleep(1.5)
 
 
 def dump_nodes():
@@ -54,7 +53,20 @@ def dump_nodes():
 
 
 def node_text(node):
-    return (node.get("text") or "").strip().lower()
+    text = (node.get("text") or "") + " " + (node.get("content-desc") or "")
+    return text.strip().lower()
+
+
+def serialize(nodes):
+    return "\n".join(
+        " | ".join((
+            node.get("package") or "",
+            node.get("resource-id") or "",
+            node.get("class") or "",
+            node_text(node),
+        ))
+        for node in nodes
+    )
 
 
 def bounds_center(node):
@@ -69,7 +81,6 @@ def bounds_center(node):
 def tap_node(node):
     x, y = bounds_center(node)
     adb("shell", "input", "tap", str(x), str(y))
-    time.sleep(0.5)
 
 
 def find_choice(nodes, word):
@@ -84,6 +95,7 @@ def find_allow(nodes):
     preferred_ids = (
         "permission_allow_foreground_only_button",
         "permission_allow_one_time_button",
+        "permission_allow_button",
     )
     for suffix in preferred_ids:
         for node in nodes:
@@ -91,32 +103,64 @@ def find_allow(nodes):
                 return node
     for node in nodes:
         text = node_text(node)
-        if "while using" in text or "only this time" in text:
+        if "while using" in text or "only this time" in text or text == "allow":
             return node
     return None
 
 
-def assert_real_location_dialog(nodes):
-    serialized = "\n".join(
-        (node.get("package") or "") + " " + (node.get("resource-id") or "") + " " + node_text(node)
-        for node in nodes
-    ).lower()
-    assert "permissioncontroller" in serialized, "system permission controller dialog not visible"
-    assert "precise" in serialized, "Precise location choice not visible"
-    assert "approximate" in serialized, "Approximate location choice not visible"
+def is_system_permission_surface(nodes):
+    for node in nodes:
+        package = (node.get("package") or "").lower()
+        resource_id = (node.get("resource-id") or "").lower()
+        if "permissioncontroller" in package:
+            return True
+        if package and package != PKG and "permission_" in resource_id:
+            return True
+    return False
+
+
+def wait_for_location_dialog(timeout=12.0):
+    deadline = time.monotonic() + timeout
+    last = []
+    while time.monotonic() < deadline:
+        try:
+            last = dump_nodes()
+        except RuntimeError:
+            time.sleep(0.4)
+            continue
+        if (is_system_permission_surface(last)
+                and find_choice(last, "precise") is not None
+                and find_choice(last, "approximate") is not None):
+            return last
+        time.sleep(0.4)
+    focused = adb("shell", "dumpsys", "window", "windows", check=False)
+    raise AssertionError(
+        "location permission dialog did not become ready within %.1fs\n"
+        "--- focused windows ---\n%s\n--- last UI tree ---\n%s"
+        % (timeout, focused[-4000:], serialize(last)[-8000:])
+    )
+
+
+def wait_for_allow(timeout=8.0):
+    deadline = time.monotonic() + timeout
+    last = []
+    while time.monotonic() < deadline:
+        last = dump_nodes()
+        allow = find_allow(last)
+        if is_system_permission_surface(last) and allow is not None:
+            return allow
+        time.sleep(0.3)
+    raise AssertionError("foreground location Allow button not found\n" + serialize(last)[-8000:])
 
 
 def choose_location(precise):
-    nodes = dump_nodes()
-    assert_real_location_dialog(nodes)
+    nodes = wait_for_location_dialog()
     choice = find_choice(nodes, "precise" if precise else "approximate")
     assert choice is not None
     tap_node(choice)
-    nodes = dump_nodes()
-    allow = find_allow(nodes)
-    assert allow is not None, "foreground location allow button not found"
+    allow = wait_for_allow()
     tap_node(allow)
-    time.sleep(1.5)
+    time.sleep(1.2)
 
 
 def trip_runtime_running():
