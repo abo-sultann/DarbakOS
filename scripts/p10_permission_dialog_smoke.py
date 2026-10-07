@@ -4,6 +4,7 @@
 Exercises the real system permission dialog. No adb pm grant is used for location.
 The first clean install chooses Approximate and verifies the trip runtime stays stopped.
 The second clean install chooses Precise and verifies the foreground trip runtime starts.
+Finally, fine location is revoked to verify the next foreground launch does not restart the runtime.
 """
 from pathlib import Path
 import re
@@ -137,4 +138,12 @@ assert permission_granted(COARSE), "Precise choice must include coarse location"
 assert permission_granted(FINE), "Precise choice did not grant fine location"
 assert trip_runtime_running(), "Trip runtime did not start after precise permission was granted"
 
-print("PASS: clean-install Android permission dialog covers approximate and precise location without adb pre-grant")
+# Withdrawal path: simulate the user removing precise access after it was granted.
+adb("shell", "pm", "revoke", PKG, FINE)
+time.sleep(1.0)
+assert not permission_granted(FINE), "fine location revocation did not take effect"
+adb("shell", "am", "start", "-W", "-n", ACTIVITY)
+time.sleep(1.0)
+assert not trip_runtime_running(), "Trip runtime must remain stopped after fine location is withdrawn"
+
+print("PASS: actual permission dialog covers approximate/precise and withdrawn fine location prevents runtime restart")
