@@ -1,14 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Owner's Launcher.2026 palette; provenance in REFERENCES.md. -->
-    <color name="background">#07111D</color>
-    <color name="surface">#111D2B</color>
-    <color name="card">#101E2C</color>
-    <color name="border">#2D5573</color>
-    <color name="accent">#39A9FF</color>
-    <color name="gold">#D7AD55</color>
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#D0E2F1</color>
-    <color name="text_muted">#8299AA</color>
+    <!-- Modern automotive palette. Keep state colors semantic and high-contrast for driving. -->
+    <color name="background">#050A11</color>
+    <color name="background_deep">#02060B</color>
+    <color name="surface">#101A26</color>
+    <color name="surface_elevated">#172433</color>
+    <color name="card">#142231</color>
+    <color name="card_soft">#CC172635</color>
+    <color name="border">#35516A</color>
+    <color name="border_soft">#223D52</color>
+    <color name="accent">#58C7FF</color>
+    <color name="accent_soft">#2458C7FF</color>
+    <color name="accent_glow">#1658C7FF</color>
+    <color name="teal">#63E6C4</color>
+    <color name="gold">#F0C36B</color>
+    <color name="danger">#FF766D</color>
+    <color name="text_primary">#F7FBFF</color>
+    <color name="text_secondary">#C3D4E2</color>
+    <color name="text_muted">#7990A4</color>
     <color name="transparent">#00000000</color>
+    <color name="nav_surface">#B30C1621</color>
 </resources>
