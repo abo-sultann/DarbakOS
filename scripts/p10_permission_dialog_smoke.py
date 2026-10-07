@@ -119,7 +119,22 @@ def is_system_permission_surface(nodes):
     return False
 
 
-def wait_for_location_dialog(timeout=12.0):
+def dismiss_transient_system_overlay(nodes):
+    """Dismiss first-boot SystemUI overlays that can cover the permission dialog."""
+    for node in nodes:
+        package = (node.get("package") or "").lower()
+        resource_id = (node.get("resource-id") or "").lower()
+        text = node_text(node)
+        if package == "com.android.systemui" and (
+                resource_id.endswith(":id/ok") or resource_id.endswith("/ok")):
+            if "got it" in text or node.get("clickable") == "true":
+                tap_node(node)
+                time.sleep(0.7)
+                return True
+    return False
+
+
+def wait_for_location_dialog(timeout=15.0):
     deadline = time.monotonic() + timeout
     last = []
     while time.monotonic() < deadline:
@@ -127,6 +142,8 @@ def wait_for_location_dialog(timeout=12.0):
             last = dump_nodes()
         except RuntimeError:
             time.sleep(0.4)
+            continue
+        if dismiss_transient_system_overlay(last):
             continue
         if (is_system_permission_surface(last)
                 and find_choice(last, "precise") is not None
@@ -146,6 +163,8 @@ def wait_for_allow(timeout=8.0):
     last = []
     while time.monotonic() < deadline:
         last = dump_nodes()
+        if dismiss_transient_system_overlay(last):
+            continue
         allow = find_allow(last)
         if is_system_permission_surface(last) and allow is not None:
             return allow
