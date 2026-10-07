@@ -33,10 +33,10 @@ permissions:
 jobs:
   compatibility:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -45,7 +45,7 @@ jobs:
       - name: Source and safety checks
         run: python3 scripts/check_baseline.py && python3 scripts/p9_gate_check.py
 
-      - name: Provision Android command-line tools
+      - name: Provision Android platform tools
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: '12266719'
@@ -58,10 +58,38 @@ jobs:
           adb start-server
           adb version
 
-      - name: Install Android 17 SDK
-        run: sdkmanager 'platforms;android-37' 'build-tools;36.0.0'
+      - name: Install current Android command-line tools
+        run: |
+          set -e
+          CLT_ZIP="$RUNNER_TEMP/commandlinetools-linux-15859902_latest.zip"
+          CLT_TMP="$RUNNER_TEMP/darbak-clt"
+          CLT_HOME="$ANDROID_HOME/cmdline-tools/darbak-current"
+          curl -fsSL 'https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip' -o "$CLT_ZIP"
+          echo '4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583  '"$CLT_ZIP" | sha256sum -c -
+          rm -rf "$CLT_TMP" "$CLT_HOME"
+          mkdir -p "$CLT_TMP" "$CLT_HOME"
+          unzip -q "$CLT_ZIP" -d "$CLT_TMP"
+          cp -a "$CLT_TMP/cmdline-tools/." "$CLT_HOME/"
+          "$CLT_HOME/bin/sdkmanager" --version
+          echo "$CLT_HOME/bin" >> "$GITHUB_PATH"
 
-      - name: Build and lint
+      - name: Install Android 17.0 SDK and system image
+        run: |
+          set -e
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/darbak-current/bin/sdkmanager"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --channel=3 \
+            'platforms;android-37.0' \
+            'build-tools;36.0.0' \
+            'emulator' \
+            'system-images;android-37.0;google_apis;x86_64'
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
+          rm -f "$ANDROID_HOME/platforms/android-37"
+          ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          test -f "$ANDROID_HOME/platforms/android-37/android.jar"
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --list --channel=3 | grep -E 'platforms;android-37\.0|system-images;android-37\.0;google_apis;x86_64'
+
+      - name: Build and lint against API37
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest :mediafixture:assembleDebug :osmandfixture:assembleDebug :app:lintDebug --no-daemon --console=plain
 
       - name: Enable emulator acceleration
@@ -82,37 +110,63 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -skin 1024x600 -dpi-device 160
           script: mkdir -p test-evidence && python3 scripts/p5_media_smoke.py > test-evidence/p5-runner.log 2>&1 && python3 scripts/p6_vehicle_smoke.py > test-evidence/p6-runner.log 2>&1 && python3 scripts/p7_apps_smoke.py > test-evidence/p7-apps-runner.log 2>&1 && python3 scripts/p7_settings_smoke.py > test-evidence/p7-settings-runner.log 2>&1 && python3 scripts/p7_standby_smoke.py > test-evidence/p7-standby-runner.log 2>&1 && python3 scripts/p8_admin_smoke.py > test-evidence/p8-admin-runner.log 2>&1 && python3 scripts/p8_update_inspection_smoke.py > test-evidence/p8-update-runner.log 2>&1 && python3 scripts/p8_recovery_smoke.py > test-evidence/p8-recovery-runner.log 2>&1
 
+      - name: Create Android 17.0 AVD
+        run: |
+          set -e
+          AVDMANAGER="$ANDROID_HOME/cmdline-tools/darbak-current/bin/avdmanager"
+          echo no | "$AVDMANAGER" create avd --force \
+            --name darbak-api37 \
+            --package 'system-images;android-37.0;google_apis;x86_64' \
+            --device pixel_6
+          grep -R '^target=android-37\.0$' "$HOME/.android/avd" >/dev/null
+
+      - name: Start Android 17.0 emulator
+        run: |
+          set -e
+          mkdir -p test-evidence
+          nohup "$ANDROID_HOME/emulator/emulator" \
+            -avd darbak-api37 \
+            -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim \
+            -camera-back none -memory 3072 -skin 1920x1080 -dpi-device 240 \
+            > test-evidence/api37-emulator.log 2>&1 &
+          echo $! > "$RUNNER_TEMP/darbak-api37.pid"
+          adb wait-for-device
+          timeout 240 bash -c 'until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" = "1" ]; do sleep 2; done'
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell input keyevent 82 || true
+          adb shell getprop ro.build.version.release
+          adb shell getprop ro.build.version.sdk
+          adb shell wm size
+          adb shell wm density
+
       - name: API37 modern review gate
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 37
-          target: default
-          arch: x86_64
-          ram-size: 3072M
-          heap-size: 384M
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -skin 1920x1080 -dpi-device 240
-          script: |
-            set -e
-            mkdir -p test-evidence
-            python3 scripts/p10_permission_dialog_smoke.py > test-evidence/p10-permission-dialog.log 2>&1
-            python3 scripts/p10_media_permission_smoke.py > test-evidence/p10-media-permission.log 2>&1
-            # Permission-dialog behavior is proven above. Grant precise location only for the
-            # remaining focused instrumentation so system UI cannot obscure unrelated checks.
-            adb shell pm grant com.abosultan.darbakos.test android.permission.ACCESS_COARSE_LOCATION
-            adb shell pm grant com.abosultan.darbakos.test android.permission.ACCESS_FINE_LOCATION
-            python3 scripts/p9_modern_display_smoke.py > test-evidence/p10-modern-display.log 2>&1
-            adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-            adb install -r mediafixture/build/outputs/apk/debug/mediafixture-debug.apk
-            adb install -r osmandfixture/build/outputs/apk/debug/osmandfixture-debug.apk
-            python3 scripts/p10_background_osmand_smoke.py > test-evidence/p10-background-osmand.log 2>&1
-            adb shell appops set com.abosultan.darbakos.test MOCK_LOCATION allow
-            adb shell settings put secure enabled_notification_listeners com.abosultan.darbakos.test/com.abosultan.darbakos.MediaNotificationListener
-            adb shell am instrument -w -e class com.abosultan.darbakos.ModernHeadUnitTest,com.abosultan.darbakos.LocationPermissionPolicyTest,com.abosultan.darbakos.ModernPermissionPolicyTest,com.abosultan.darbakos.RuntimeStartPolicyTest,com.abosultan.darbakos.StartupCoordinatorTest,com.abosultan.darbakos.PositionFreshnessTest,com.abosultan.darbakos.TripStorageFailoverTest,com.abosultan.darbakos.MediaStoreAudioScannerTest,com.abosultan.darbakos.OsmAndVisibilityIntegrationTest com.abosultan.darbakos.test.test/androidx.test.runner.AndroidJUnitRunner > test-evidence/p10-review-tests.log 2>&1
-            ! grep -q 'FAILURES!!!' test-evidence/p10-review-tests.log
-            grep -Eq 'OK \([0-9]+ tests?\)' test-evidence/p10-review-tests.log
-            adb shell am instrument -w -e class com.abosultan.darbakos.P4GpsTripTest,com.abosultan.darbakos.PositionStateTest,com.abosultan.darbakos.TripRecorderTest,com.abosultan.darbakos.TripPersistenceTest,com.abosultan.darbakos.MediaSnapshotTest,com.abosultan.darbakos.LocalMediaIntegrationTest com.abosultan.darbakos.test.test/androidx.test.runner.AndroidJUnitRunner > test-evidence/p10-portable-services.log 2>&1
-            ! grep -q 'FAILURES!!!' test-evidence/p10-portable-services.log
+        run: |
+          set -e
+          mkdir -p test-evidence
+          python3 scripts/p10_permission_dialog_smoke.py > test-evidence/p10-permission-dialog.log 2>&1
+          python3 scripts/p10_media_permission_smoke.py > test-evidence/p10-media-permission.log 2>&1
+          # The real permission dialogs are proven above. Pre-grant precise location only for
+          # unrelated focused integration checks so system UI cannot obscure those tests.
+          adb shell pm grant com.abosultan.darbakos.test android.permission.ACCESS_COARSE_LOCATION
+          adb shell pm grant com.abosultan.darbakos.test android.permission.ACCESS_FINE_LOCATION
+          python3 scripts/p9_modern_display_smoke.py > test-evidence/p10-modern-display.log 2>&1
+          adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          adb install -r mediafixture/build/outputs/apk/debug/mediafixture-debug.apk
+          adb install -r osmandfixture/build/outputs/apk/debug/osmandfixture-debug.apk
+          python3 scripts/p10_background_osmand_smoke.py > test-evidence/p10-background-osmand.log 2>&1
+          adb shell appops set com.abosultan.darbakos.test MOCK_LOCATION allow
+          adb shell settings put secure enabled_notification_listeners com.abosultan.darbakos.test/com.abosultan.darbakos.MediaNotificationListener
+          adb shell am instrument -w -e class com.abosultan.darbakos.ModernHeadUnitTest,com.abosultan.darbakos.LocationPermissionPolicyTest,com.abosultan.darbakos.ModernPermissionPolicyTest,com.abosultan.darbakos.RuntimeStartPolicyTest,com.abosultan.darbakos.StartupCoordinatorTest,com.abosultan.darbakos.PositionFreshnessTest,com.abosultan.darbakos.TripStorageFailoverTest,com.abosultan.darbakos.MediaStoreAudioScannerTest,com.abosultan.darbakos.OsmAndVisibilityIntegrationTest com.abosultan.darbakos.test.test/androidx.test.runner.AndroidJUnitRunner > test-evidence/p10-review-tests.log 2>&1
+          ! grep -q 'FAILURES!!!' test-evidence/p10-review-tests.log
+          grep -Eq 'OK \([0-9]+ tests?\)' test-evidence/p10-review-tests.log
+          adb shell am instrument -w -e class com.abosultan.darbakos.P4GpsTripTest,com.abosultan.darbakos.PositionStateTest,com.abosultan.darbakos.TripRecorderTest,com.abosultan.darbakos.TripPersistenceTest,com.abosultan.darbakos.MediaSnapshotTest,com.abosultan.darbakos.LocalMediaIntegrationTest com.abosultan.darbakos.test.test/androidx.test.runner.AndroidJUnitRunner > test-evidence/p10-portable-services.log 2>&1
+          ! grep -q 'FAILURES!!!' test-evidence/p10-portable-services.log
+
+      - name: Stop Android 17.0 emulator
+        if: always()
+        run: adb emu kill || true
 
       - name: Upload TEST APK and evidence
         if: always()
