@@ -1,0 +1,14 @@
+<resources>
+    <dimen name="modern_shell_padding">24dp</dimen>
+    <dimen name="modern_gap">18dp</dimen>
+    <dimen name="modern_gap_small">10dp</dimen>
+    <dimen name="modern_corner">28dp</dimen>
+    <dimen name="modern_header_height">54dp</dimen>
+    <dimen name="modern_nav_height">72dp</dimen>
+    <dimen name="modern_touch_height">62dp</dimen>
+    <dimen name="modern_body">20sp</dimen>
+    <dimen name="modern_label">15sp</dimen>
+    <dimen name="modern_title">34sp</dimen>
+    <dimen name="modern_hero_speed">116sp</dimen>
+    <dimen name="modern_nav_instruction">38sp</dimen>
+</resources>
