@@ -1,8 +1,22 @@
 <resources>
+    <!-- Legacy/default density-safe values. Large-screen overrides live in values-sw720dp. -->
     <dimen name="space">16dp</dimen>
     <dimen name="space_small">8dp</dimen>
     <dimen name="corner">16dp</dimen>
     <dimen name="touch_height">56dp</dimen>
     <dimen name="text_body">20sp</dimen>
     <dimen name="text_title">28sp</dimen>
+
+    <dimen name="modern_shell_padding">16dp</dimen>
+    <dimen name="modern_gap">12dp</dimen>
+    <dimen name="modern_gap_small">8dp</dimen>
+    <dimen name="modern_corner">22dp</dimen>
+    <dimen name="modern_header_height">48dp</dimen>
+    <dimen name="modern_nav_height">64dp</dimen>
+    <dimen name="modern_touch_height">56dp</dimen>
+    <dimen name="modern_body">18sp</dimen>
+    <dimen name="modern_label">14sp</dimen>
+    <dimen name="modern_title">30sp</dimen>
+    <dimen name="modern_hero_speed">84sp</dimen>
+    <dimen name="modern_nav_instruction">30sp</dimen>
 </resources>
