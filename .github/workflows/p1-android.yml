@@ -160,7 +160,7 @@ jobs:
           adb install -r osmandfixture/build/outputs/apk/debug/osmandfixture-debug.apk
           python3 scripts/p10_background_osmand_smoke.py > test-evidence/p10-background-osmand.log 2>&1
           adb shell appops set com.abosultan.darbakos.test MOCK_LOCATION allow
-          adb shell settings put secure enabled_notification_listeners com.abosultan.darbakos.test/com.abosultan.darbakos.MediaNotificationListener
+          adb shell settings put secure enabled_notification_listeners com.abosultan.darbakos.test/com.abosultan.darbakos.core.DarbakMediaNotificationListener
           adb shell am instrument -w -e class com.abosultan.darbakos.ModernHeadUnitTest,com.abosultan.darbakos.LocationPermissionPolicyTest,com.abosultan.darbakos.ModernPermissionPolicyTest,com.abosultan.darbakos.RuntimeStartPolicyTest,com.abosultan.darbakos.StartupCoordinatorTest,com.abosultan.darbakos.PositionFreshnessTest,com.abosultan.darbakos.TripStorageFailoverTest,com.abosultan.darbakos.MediaStoreAudioScannerTest,com.abosultan.darbakos.OsmAndVisibilityIntegrationTest com.abosultan.darbakos.test.test/androidx.test.runner.AndroidJUnitRunner > test-evidence/p10-review-tests.log 2>&1
           ! grep -q 'FAILURES!!!' test-evidence/p10-review-tests.log
           grep -Eq 'OK \([0-9]+ tests?\)' test-evidence/p10-review-tests.log
