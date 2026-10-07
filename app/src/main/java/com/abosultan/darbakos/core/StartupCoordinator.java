@@ -1,5 +1,6 @@
 package com.abosultan.darbakos.core;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -39,7 +40,7 @@ public final class StartupCoordinator {
         Intent runtime = new Intent(context, TripRuntimeService.class);
         try {
             if (RuntimeStartPolicy.useForegroundServiceStart(Build.VERSION.SDK_INT)) {
-                context.startForegroundService(runtime);
+                startForegroundServiceApi26(context, runtime);
             } else {
                 context.startService(runtime);
             }
@@ -47,6 +48,11 @@ public final class StartupCoordinator {
         } catch (RuntimeException ignored) {
             return false;
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private static void startForegroundServiceApi26(Context context, Intent runtime) {
+        context.startForegroundService(runtime);
     }
 
     /** Used when a visible Activity observes that precise permission has been revoked. */
