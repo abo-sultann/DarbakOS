@@ -153,6 +153,9 @@ jobs:
           adb shell pm grant com.abosultan.darbakos.test android.permission.ACCESS_FINE_LOCATION
           python3 scripts/p9_modern_display_smoke.py > test-evidence/p10-modern-display.log 2>&1
           adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          adb shell am instrument -w -e class com.abosultan.darbakos.OsmAndAbsenceIntegrationTest com.abosultan.darbakos.test.test/androidx.test.runner.AndroidJUnitRunner > test-evidence/p10-osmand-absent.log 2>&1
+          ! grep -q 'FAILURES!!!' test-evidence/p10-osmand-absent.log
+          grep -q 'OK (1 test)' test-evidence/p10-osmand-absent.log
           adb install -r mediafixture/build/outputs/apk/debug/mediafixture-debug.apk
           adb install -r osmandfixture/build/outputs/apk/debug/osmandfixture-debug.apk
           python3 scripts/p10_background_osmand_smoke.py > test-evidence/p10-background-osmand.log 2>&1
