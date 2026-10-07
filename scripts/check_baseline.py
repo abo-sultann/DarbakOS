@@ -58,8 +58,14 @@ assert not app.findall('receiver'), 'Generic boot/ACC broadcast receivers are no
 
 activity = app.find('activity')
 assert activity.get(A + 'screenOrientation') == 'landscape'
+assert activity.get(A + 'enableOnBackInvokedCallback') == 'false', \
+    'MainActivity currently uses the official per-activity predictive-back migration opt-out'
 assert all(c.get(A + 'name') != 'android.intent.category.HOME'
            for c in activity.findall('.//category')), 'Darbak must not take over the device launcher yet'
+lint_config = ET.parse(ROOT / 'app/lint.xml').getroot()
+ignored_lint = {item.get('id') for item in lint_config.findall('issue') if item.get('severity') == 'ignore'}
+assert ignored_lint == {'GestureBackNavigation'}, \
+    'Only the predictive-back lint false-positive is suppressed while the manifest opt-out is active'
 
 build = (ROOT / 'app/build.gradle').read_text()
 assert re.search(r'compileSdk\s+37\b', build), 'P10 must compile against Android 17 / API37'
@@ -104,4 +110,4 @@ for path in main.rglob('*.java'):
     if path not in (runtime, media_library):
         assert not re.search(r'new\s+(?:HandlerThread|Handler)\s*\(', source), path
 
-print('PASS: API25 legacy floor + API37 modern target, precise-location policy, MediaStore audio, package visibility, stale-GPS expiry, storage failover, no generic boot receiver')
+print('PASS: API25 legacy floor + API37 modern target, precise-location policy, MediaStore audio, package visibility, stale-GPS expiry, storage failover, scoped back-navigation migration, no generic boot receiver')
