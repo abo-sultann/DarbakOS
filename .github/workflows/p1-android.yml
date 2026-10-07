@@ -96,6 +96,11 @@ jobs:
             set -e
             mkdir -p test-evidence
             python3 scripts/p10_permission_dialog_smoke.py > test-evidence/p10-permission-dialog.log 2>&1
+            python3 scripts/p10_media_permission_smoke.py > test-evidence/p10-media-permission.log 2>&1
+            # Permission-dialog behavior is proven above. Grant precise location only for the
+            # remaining focused instrumentation so system UI cannot obscure unrelated checks.
+            adb shell pm grant com.abosultan.darbakos.test android.permission.ACCESS_COARSE_LOCATION
+            adb shell pm grant com.abosultan.darbakos.test android.permission.ACCESS_FINE_LOCATION
             python3 scripts/p9_modern_display_smoke.py > test-evidence/p10-modern-display.log 2>&1
             adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb install -r mediafixture/build/outputs/apk/debug/mediafixture-debug.apk
