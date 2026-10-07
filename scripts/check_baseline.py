@@ -12,14 +12,30 @@ for path in main.rglob('*.xml'):
 manifest = ET.parse(main / 'AndroidManifest.xml').getroot()
 app = manifest.find('application')
 assert app.get(A + 'supportsRtl') == 'true'
-permissions = {item.get(A + 'name') for item in manifest.findall('uses-permission')}
-assert permissions == {
+
+permission_nodes = {item.get(A + 'name'): item for item in manifest.findall('uses-permission')}
+assert set(permission_nodes) == {
     'android.permission.ACCESS_COARSE_LOCATION',
     'android.permission.ACCESS_FINE_LOCATION',
     'android.permission.READ_EXTERNAL_STORAGE',
+    'android.permission.READ_MEDIA_AUDIO',
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_LOCATION',
-}, 'Only approved location/media permissions are allowed at this checkpoint'
+}, 'Only approved location/media/foreground-service permissions are allowed at this checkpoint'
+assert permission_nodes['android.permission.READ_EXTERNAL_STORAGE'].get(A + 'maxSdkVersion') == '32', \
+    'Legacy shared-storage permission must be capped at API32'
+
+queries = manifest.find('queries')
+assert queries is not None, 'Modern package visibility declarations are required'
+query_packages = {item.get(A + 'name') for item in queries.findall('package')}
+assert {'net.osmand.plus', 'net.osmand', 'net.osmand.dev'} <= query_packages, \
+    'All supported OsmAnd package variants must be visible'
+query_intents = queries.findall('intent')
+assert any(
+    {a.get(A + 'name') for a in intent.findall('action')} == {'android.intent.action.MAIN'}
+    and {c.get(A + 'name') for c in intent.findall('category')} == {'android.intent.category.LAUNCHER'}
+    for intent in query_intents
+), 'Launcher app discovery must be explicitly visible without QUERY_ALL_PACKAGES'
 
 services = {item.get(A + 'name'): item for item in app.findall('service')}
 assert set(services) == {'.core.TripRuntimeService', '.core.DarbakMediaNotificationListener'}, \
@@ -37,18 +53,21 @@ assert len(filters) == 1
 assert {a.get(A + 'name') for a in filters[0].findall('action')} == {
     'android.service.notification.NotificationListenerService'
 }
-assert media.get(A + 'process') is None and not app.findall('receiver'), \
-    'No extra process or broadcast receiver is approved'
+assert media.get(A + 'process') is None
+assert not app.findall('receiver'), 'Generic boot/ACC broadcast receivers are not approved before physical head-unit commissioning'
 
 activity = app.find('activity')
 assert activity.get(A + 'screenOrientation') == 'landscape'
 assert all(c.get(A + 'name') != 'android.intent.category.HOME'
            for c in activity.findall('.//category')), 'Darbak must not take over the device launcher yet'
+
 build = (ROOT / 'app/build.gradle').read_text()
-assert re.search(r'minSdk\s+25\b', build)
-assert re.search(r'targetSdk\s+35\b', build), 'P10 modern target must remain Android 15 / API35'
+assert re.search(r'compileSdk\s+37\b', build), 'P10 must compile against Android 17 / API37'
+assert re.search(r'minSdk\s+25\b', build), 'API25 remains the legacy regression floor'
+assert re.search(r'targetSdk\s+37\b', build), 'P10 modern target must be Android 17 / API37'
 assert not re.search(r'^\s*(?:implementation|api|runtimeOnly)\b', build, re.M)
 assert not list(main.rglob('*.so')), 'No native ABI dependency expected'
+
 strings = ET.parse(main / 'res/values/strings.xml').getroot()
 assert all(not re.search(r'TEST|experimental|preview|prototype|تجريب|معاينة|اختبار', item.text or '', re.I)
            for item in strings), 'No temporary user-facing copy'
@@ -58,18 +77,31 @@ assert 'BluetoothAdapter' not in java
 assert 'LocationManager' in java, 'P4 GPS source must remain explicit and reviewable'
 assert 'MediaSessionManager' in java and 'MediaController' in java, \
     'P5 media integration must remain explicit and platform-based'
+assert 'BOOT_COMPLETED' not in java, 'Portable P10 must not assume generic boot autostart'
+
 runtime = main / 'java/com/abosultan/darbakos/core/TripRuntimeService.java'
 media_library = main / 'java/com/abosultan/darbakos/core/LocalMediaLibrary.java'
+main_activity = main / 'java/com/abosultan/darbakos/MainActivity.java'
 runtime_text = runtime.read_text()
+main_text = main_activity.read_text()
 assert runtime_text.count('new HandlerThread(') == 1
 assert runtime_text.count('new Handler(') == 1
 assert 'startForeground(' in runtime_text and 'NotificationChannel' in runtime_text, \
     'Modern Trip runtime must enter foreground mode on API26+'
+assert 'expireIfStale(' in runtime_text, 'Trip runtime must actively expire stale GPS fixes'
+assert 'fallbackToInternal(' in runtime_text, 'Trip runtime must fail over storage explicitly'
 assert media_library.read_text().count('new HandlerThread(') == 1
 assert media_library.read_text().count('new Handler(') == 1
+assert 'scanSharedAudio(' in media_library.read_text(), 'Modern shared audio must use the MediaStore path'
+assert (main / 'java/com/abosultan/darbakos/core/MediaStoreAudioScanner.java').is_file()
+assert 'LocationPermissionPolicy.requestPermissions()' in main_text
+assert 'StartupCoordinator.startPortableRuntime(' in main_text
+assert 'MediaPermissionPolicy.requiredPermission(' in main_text
+
 for path in main.rglob('*.java'):
     source = path.read_text()
     assert not re.search(r'new\s+(?:Thread|Timer)\s*\(|ExecutorService|Executors\.', source), path
     if path not in (runtime, media_library):
         assert not re.search(r'new\s+(?:HandlerThread|Handler)\s*\(', source), path
-print('PASS: API25 legacy floor + API35 modern location FGS contract, RTL, P4/P5 boundaries, no extra process/receiver/runtime dependency/native code')
+
+print('PASS: API25 legacy floor + API37 modern target, precise-location policy, MediaStore audio, package visibility, stale-GPS expiry, storage failover, no generic boot receiver')
