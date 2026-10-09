@@ -1,4 +1,5 @@
 <resources>
+    <!-- Internal theme name remains migration-safe; visible identity is GDN. -->
     <style name="Theme.Darbak" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowBackground">@color/background</item>
@@ -7,15 +8,17 @@
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:navigationBarColor">@color/background</item>
-        <item name="android:colorControlHighlight">#4439A9FF</item>
+        <item name="android:colorControlHighlight">#442E7D59</item>
     </style>
     <style name="Body">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans</item>
         <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textColor">@color/text_secondary</item>
         <item name="android:gravity">start</item>
         <item name="android:textDirection">rtl</item>
+        <item name="android:lineSpacingExtra">2dp</item>
     </style>
     <style name="Title" parent="Body">
         <item name="android:textSize">@dimen/text_title</item>
@@ -31,6 +34,7 @@
     <style name="Action" parent="android:style/Widget.Material.Button.Borderless">
         <item name="android:layout_height">@dimen/touch_height</item>
         <item name="android:minHeight">@dimen/touch_height</item>
+        <item name="android:fontFamily">sans</item>
         <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textAllCaps">false</item>
