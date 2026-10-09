@@ -1,33 +1,39 @@
-# 02_NEXT_TASK — GDN P10 Closeout
+# 02_NEXT_TASK — Post-P10 / Physical Commissioning Readiness
 
-Android-modern compatibility and the modern GDN UI foundation are green. Do **not** repeat broad compatibility or UI-foundation work unless a concrete regression appears.
+P10 software modernization is **closed and merged to `main`**. Do **not** reopen broad Android-modern compatibility, identity cleanup or UI-foundation work unless a concrete regression appears.
 
 ## Verified baseline
-- Branch: `p10-review-fixes-20261006`.
-- Latest fully verified UI baseline: `93891857d16945be7200e80fa5d24afd5e10c2cf`.
-- CI run `37982275776` / #367: **SUCCESS**.
-- API37 Build/Lint: PASS.
+- P10 reviewed branch head: `855731e4ce23c5cdea117c552ac449703921a8f0`.
+- Merge commit on `main`: `1e2cc0185653ea9dcacabb51d9128857f143befa`.
+- Pre-merge CI run `37993383810` / #373: **SUCCESS**.
+- Post-merge `main` CI run `38000534974` / #374: **SUCCESS**.
+- Android 17 / API37 Production Target: PASS.
 - API25 Legacy Regression Floor: PASS.
-- P10 software review items 1–8: PASS within stated scope.
-- Current product identity: **غضن | GDN**.
+- Product identity: **غضن | GDN**.
 
-## Next software task — close P10
-1. Finish documentation alignment: `TEST_RESULTS.md`, `CHANGELOG.md` where present, and `docs/P10_ANDROID_MODERN_REVIEW.md`.
-2. **DONE — 2026-10-10:** bounded `Darbak` identity audit; safe visible/documentation remnants updated. See [`docs/GDN_IDENTITY_AUDIT.md`](docs/GDN_IDENTITY_AUDIT.md) for retained compatibility identifiers and untouched history. No later task is authorized by this audit.
-3. Preserve compatibility-sensitive identifiers unless a tested migration exists, including package namespace, persisted preference names and any update-package compatibility contract.
-4. Run final CI on the documentation/identity head and require green API25 + API37 gates.
-5. Review PR #1 for unresolved review threads/comments and final diff risks.
-6. Only after the P10 Quality Gate is fully documented and CI-green: decide whether PR #1 is ready to leave Draft and merge to `main`.
+## Next approved work
+Until the replacement production head unit is physically available, keep software changes bounded to proven defects or clearly approved standalone features. Do not invent hardware assumptions.
 
-## Physical work remains deferred
-When the exact production head unit is available:
-1. Capture read-only Android/API/SoC/RAM/display/build/OEM/CANBUS baseline.
-2. Run bounded GDN APK smoke.
-3. Verify real USB mount/unmount/remount, TPMS/ESP32, GNSS/TripRuntime, audio routing and real OsmAnd.
-4. Measure ACC/boot/wake/autostart before any OEM startup adapter.
-5. Verify Recovery and Golden Backup/hash before destructive changes.
-6. Only then evaluate deeper OEM/CANBUS/autostart integration.
+When the production head unit arrives, execute commissioning in this order:
+1. **Read-only baseline:** Android/API, build fingerprint, SoC, RAM/storage, display resolution/density, USB topology, OEM/MCU/CANBUS identity where observable without modification.
+2. **Bounded GDN APK smoke:** install/launch/Home/RTL/navigation between internal surfaces; capture logs and exact version/build identity.
+3. **TPMS/ESP32:** verify real connectivity and background behavior without changing firmware assumptions.
+4. **GNSS/TripRuntime:** real fixes, stale behavior, background continuity and storage state.
+5. **Media/OsmAnd:** USB mount/unmount/remount, audio routing, MediaStore visibility and real OsmAnd handoff/return.
+6. **CANBUS/OEM:** observe real available signals/functions before implementing adapters.
+7. **ACC/boot/wake:** measure actual behavior; do not add a generic receiver.
+8. **Recovery readiness:** prove Recovery path and create/verify Golden Backup/hash where possible.
+9. Only after step 8 may deeper OEM/startup/platform integration be evaluated.
 
-All hardware-specific acceptance above is **PENDING — PHYSICAL HEAD UNIT**.
+Everything in steps 1–9 is currently **PENDING — PHYSICAL HEAD UNIT**.
 
-No generic BootReceiver, firmware/MCU/kernel flashing, destructive root, OEM hiding, boot replacement or system-app removal is approved before recovery readiness is proven.
+## Explicitly not approved yet
+- firmware/MCU/kernel flashing;
+- destructive root changes;
+- boot replacement or OEM app removal;
+- generic BOOT_COMPLETED/ACC startup logic;
+- namespace/applicationId migration;
+- persisted-key renaming without a migration plan and regression coverage.
+
+## P11
+P11 is **not started**. Define it only when there is a concrete post-P10 objective or physical commissioning evidence that justifies a new software phase.
