@@ -1,32 +1,34 @@
-# Darbak OS
+# غضن | GDN
 
-Unified in-car operating experience for a modern Android head unit.
+تجربة قيادة موحّدة لشاشات Android الحديثة في السيارة.
 
-## Current target
-- **Primary software target:** Android 17 / API 37.
-- **Current generic modern test profile:** landscape Full HD class; exact production display/SoC/RAM/OEM profile remains intentionally unknown until the replacement head unit is selected and physically inspected.
-- **Legacy regression floor:** Android 7.1 / API 25. The former Allwinner T3 / 1024×600 / ~1 GB platform is no longer the production target and must not constrain modern architecture, UI or features.
-- Arabic RTL, offline-first operation and truthful unavailable states remain product requirements.
+> **ملاحظة انتقالية:** اسم المستودع وبعض أسماء الحزم/الرموز الداخلية ما زالت تحمل `DarbakOS` لأسباب توافق وهجرة تقنية. الهوية الحالية للمنتج هي **غضن | GDN**، ولا يُستخدم الاسم السابق كهوية للمستخدم.
 
-## Current phase
-P0–P8 are closed within their documented software scopes. P9 modern software readiness is proven, while physical commissioning remains pending the exact production head unit. P10 is active: Android-modern compatibility is now green on API37; **Modern UI / Visual Quality** is the next software gate, while ACC/boot/USB/GNSS/audio/CANBUS/OEM acceptance remains hardware-specific.
+## الهدف الحالي
+- **هدف الإنتاج البرمجي:** Android 17 / API 37.
+- **ملف الاختبار الحديث الحالي:** شاشة أفقية من فئة Full HD؛ مواصفات شاشة الإنتاج الفعلية من معالج/RAM ودقة وخصائص OEM تبقى غير مفترضة حتى وصول الشاشة البديلة وفحصها فعليًا.
+- **حد الانحدار القديم فقط:** Android 7.1 / API 25. منصة Allwinner T3 القديمة بدقة 1024×600 وذاكرة تقارب 1 GB لم تعد هدف إنتاج، ولا يجوز أن تقيّد معمارية أو واجهة أو مزايا غضن الحديثة.
+- العربية وRTL والعمل دون إنترنت وحالات عدم التوفر الصادقة متطلبات أساسية للمنتج.
 
-See the current P10 review record: [`docs/P10_ANDROID_MODERN_REVIEW.md`](docs/P10_ANDROID_MODERN_REVIEW.md).
+## المرحلة الحالية
+P0–P8 مغلقة ضمن نطاقها البرمجي الموثق. P9 أثبت جاهزية البرنامج الحديث، بينما القبول الفعلي على شاشة السيارة ما زال معلقًا. P10 نشط: توافق Android الحديث أخضر على API37، وبدأت طبقة **Modern UI / Visual Quality** بهوية غضن المتجاوبة للشاشات الكبيرة. اختبارات ACC/boot/USB/GNSS/audio/CANBUS/OEM النهائية مرتبطة بالعتاد الفعلي.
 
-## Start here
+راجع سجل P10 الحالي: [`docs/P10_ANDROID_MODERN_REVIEW.md`](docs/P10_ANDROID_MODERN_REVIEW.md).
+
+## ابدأ من هنا
 1. `01_CURRENT_STATUS.md`
 2. `02_NEXT_TASK.md`
 3. `docs/P10_ANDROID_MODERN_REVIEW.md`
-4. `00_Darbak_OS_Master_Plan_Work_v1.0.md`
+4. `00_Darbak_OS_Master_Plan_Work_v1.0.md` — اسم تاريخي سيُهاجر توثيقيًا.
 5. `REFERENCES.md`
 6. `TEST_RESULTS.md`
 
-## Critical hardware rule
-Emulator success proves software compatibility only. It does **not** approve a production head unit. No firmware/MCU/kernel flashing, destructive root, OEM hiding, boot replacement, system-app removal or other destructive platform change is allowed before the exact production unit has a read-only baseline, verified recovery path and Golden Backup/hash evidence.
+## قاعدة العتاد الحرجة
+نجاح المحاكي يثبت التوافق البرمجي فقط، ولا يعتمد شاشة إنتاج. لا Firmware/MCU/Kernel flashing ولا Root تدميري ولا إزالة مكونات نظام قبل توثيق الشاشة الفعلية، والتحقق من مسار Recovery، وإنشاء Golden Backup/Hash متى كان ذلك ممكنًا.
 
-Generic BOOT_COMPLETED/ACC behavior is not assumed. OEM startup, CANBUS, removable-media behavior, physical GPS/audio and final screen-density/thermal tuning are commissioned only against the actual device.
+لا نفترض BOOT_COMPLETED أو ACC بشكل عام. بدء التشغيل الخاص بالمصنع وCANBUS والوسائط القابلة للإزالة وGPS والصوت الفعلي وضبط الكثافة/السطوع/الحرارة تُعتمد فقط على الجهاز الحقيقي.
 
-## Latest compatibility evidence
-GitHub Actions run `37667936775` on branch `p10-review-fixes-20261006` passed the Android 17/API37 build/lint and modern review gate plus the API25 legacy regression floor. Evidence artifact: `11504071154`.
+## أحدث دليل توافق
+GitHub Actions run `37982275776` (CI #367) على الفرع `p10-review-fixes-20261006` نجح على commit `93891857d16945be7200e80fa5d24afd5e10c2cf`: Android 17/API37 + Modern Review Gate + API25 Legacy Regression Floor.
 
-GitHub is the durable project-state authority.
+GitHub هو المرجع الدائم لحالة المشروع.
