@@ -19,6 +19,12 @@ Before Recovery/Golden Backup is proven:
 - no generic BOOT_COMPLETED receiver or guessed ACC integration;
 - no replacement of OEM launcher/startup behavior based on assumptions.
 
+## Prepared tooling
+- `scripts/p11_readonly_baseline.sh` — read-only ADB collector for the first commissioning gate. It records device/build, Android/API, SoC/ABI, RAM/storage, display, USB, GNSS/location, audio/media, power/process state and package evidence without install, settings writes, reboot, root, remount or flashing.
+- `docs/P11_COMMISSIONING_EVIDENCE_TEMPLATE.md` — standard evidence record for every physical gate.
+
+The baseline collector is preparation only. Its output is not a PASS until reviewed against the exact production unit.
+
 ## Commissioning order
 
 ### 1. Read-only device baseline
@@ -31,6 +37,9 @@ Record without changing the unit:
 - GPS/GNSS provider state;
 - audio devices/routing visible to Android;
 - OEM/MCU/CANBUS identifiers exposed by Settings/system properties where safe.
+
+Preferred first capture from a connected authorized ADB host:
+`bash scripts/p11_readonly_baseline.sh`
 
 **Exit condition:** exact unit identity is captured and attached to project evidence.
 
