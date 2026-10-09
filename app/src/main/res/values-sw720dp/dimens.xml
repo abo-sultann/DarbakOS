@@ -1,0 +1,9 @@
+<resources>
+    <!-- GDN large head-unit profile: modern Full-HD+ displays. -->
+    <dimen name="space">20dp</dimen>
+    <dimen name="space_small">10dp</dimen>
+    <dimen name="corner">24dp</dimen>
+    <dimen name="touch_height">64dp</dimen>
+    <dimen name="text_body">22sp</dimen>
+    <dimen name="text_title">32sp</dimen>
+</resources>
