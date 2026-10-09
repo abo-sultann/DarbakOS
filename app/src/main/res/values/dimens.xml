@@ -1,8 +1,9 @@
 <resources>
-    <dimen name="space">16dp</dimen>
-    <dimen name="space_small">8dp</dimen>
-    <dimen name="corner">16dp</dimen>
-    <dimen name="touch_height">56dp</dimen>
+    <!-- GDN modern head-unit spacing: optimized for Full-HD+ while remaining responsive. -->
+    <dimen name="space">20dp</dimen>
+    <dimen name="space_small">10dp</dimen>
+    <dimen name="corner">22dp</dimen>
+    <dimen name="touch_height">64dp</dimen>
     <dimen name="text_body">20sp</dimen>
-    <dimen name="text_title">28sp</dimen>
+    <dimen name="text_title">30sp</dimen>
 </resources>
