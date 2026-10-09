@@ -12,8 +12,10 @@
   - GDN identity audit/migration: **PASS within bounded safe scope**; compatibility-sensitive legacy identifiers intentionally retained.
   - PR #1 merged to `main` at `1e2cc0185653ea9dcacabb51d9128857f143befa`.
   - Post-merge `main` CI run `38000534974` / #374: **SUCCESS**.
-  - OEM/ACC/boot/USB/GNSS/audio/CANBUS physical integration: **PENDING — PHYSICAL HEAD UNIT**.
-- **P11:** Not started. Do not invent software scope before the next approved objective or physical commissioning input.
+- **P11:** **READINESS PREPARED / EXECUTION BLOCKED ON HARDWARE**.
+  - Commissioning gate: [`docs/P11_PHYSICAL_COMMISSIONING_READINESS.md`](docs/P11_PHYSICAL_COMMISSIONING_READINESS.md).
+  - No physical item may be marked PASS before measurement on the exact production unit.
+  - Current state for all hardware gates: **PENDING — PHYSICAL HEAD UNIT**.
 
 ## Product identity
 The current product identity is **غضن | GDN**. `DarbakOS` may remain in repository/package/class/preferences/artifact identifiers only where changing it creates migration, persistence, Android-component or external-consumer risk. These retained identifiers are technical compatibility debt, not current branding.
@@ -58,16 +60,19 @@ Verified coverage includes:
 8. **Modern UI / Visual Quality software foundation — PASS.** Final density/brightness/touch/thermal/readability tuning: **PENDING — PHYSICAL HEAD UNIT**.
 9. **Documentation / GDN migration — PASS for P10 software closure.** Historical evidence is intentionally preserved.
 
-## Physical commissioning
-Emulator/CI success is not physical approval. The following remain **PENDING — PHYSICAL HEAD UNIT**:
-- exact display fit/density/brightness/thermal behavior;
-- real USB mount/unmount/remount;
-- physical GNSS;
-- audio routing/amplifier behavior;
-- ACC/boot/wake/autostart semantics;
-- CANBUS/OEM integration;
-- recovery readiness and Golden Backup/hash.
+## P11 commissioning sequence
+When the exact production unit is available:
+1. read-only device baseline;
+2. bounded GDN APK smoke;
+3. display/touch acceptance;
+4. TPMS/ESP32 connectivity;
+5. GNSS/TripRuntime;
+6. Media/USB/OsmAnd;
+7. CANBUS/OEM discovery;
+8. ACC/boot/wake characterization;
+9. Recovery readiness;
+10. Golden Backup/hash.
 
-Required order before destructive platform work: exact-device baseline → bounded GDN APK smoke → TPMS/ESP32 → GNSS/TripRuntime → Media/OsmAnd → CANBUS/OEM → verified Recovery/Golden Backup → only then deeper startup/OEM integration.
+Before steps 9–10 are proven: no firmware/MCU/kernel flashing, destructive root, OEM app removal, boot replacement or guessed startup integration.
 
 GitHub remains the project-state authority. Historical evidence remains in `TEST_RESULTS.md` and `docs/test-evidence/`.
