@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded API25 verification for Darbak P6 Vehicle Data foundation."""
+"""Bounded API25 verification for GDN P6 Vehicle Data foundation."""
 from pathlib import Path
 import json
 import subprocess

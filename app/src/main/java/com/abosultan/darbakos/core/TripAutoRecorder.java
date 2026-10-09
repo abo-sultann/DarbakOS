@@ -15,8 +15,11 @@ public final class TripAutoRecorder {
     public static final float DEFAULT_MAX_ACCURACY_METERS = 50f;
     public static final long DEFAULT_STATIONARY_TIMEOUT_MS = 5 * 60 * 1000L;
     public static final int DEFAULT_CHUNK_POINTS = 60;
+    /** Worst-case normally uncommitted window at the nominal 1 Hz GPS cadence. */
+    public static final int MAX_UNCOMMITTED_POINTS = DEFAULT_CHUNK_POINTS;
 
-    private final TripRecorderStore store;
+    private TripRecorderStore store;
+    private File directory;
     private final int chunkPoints;
     private final float startSpeed;
     private final float stopSpeed;
@@ -43,6 +46,7 @@ public final class TripAutoRecorder {
                 || stopSpeed < 0f || maxAccuracy <= 0f || stationaryTimeoutMs <= 0L) {
             throw new IllegalArgumentException("Trip recorder configuration");
         }
+        this.directory = directory;
         this.store = new TripRecorderStore(new TripChunkWriter(directory));
         this.chunkPoints = chunkPoints;
         this.startSpeed = startSpeed;
@@ -54,6 +58,15 @@ public final class TripAutoRecorder {
     public State state() { return state; }
     public String sessionId() { return sessionId; }
     public long nextChunkIndex() { return chunkIndex; }
+    public File directory() { return directory; }
+    public int uncommittedPointCount() { return buffer == null ? 0 : buffer.size(); }
+
+    /** Switches future chunk writes while retaining the current session and in-memory points. */
+    public void switchStorage(File nextDirectory) {
+        if (nextDirectory == null) throw new IllegalArgumentException("nextDirectory");
+        directory = nextDirectory;
+        store = new TripRecorderStore(new TripChunkWriter(nextDirectory));
+    }
 
     public void accept(PositionFix fix) throws IOException {
         if (!credible(fix)) return;

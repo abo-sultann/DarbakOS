@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
-/** Runs only after the focused P5 runner enables Darbak's notification-listener access. */
+/** Runs only after the focused P5 runner enables GDN's notification-listener access. */
 @RunWith(AndroidJUnit4.class)
 public final class MediaAccessShellTest {
     @Test public void grantedAccessWithNoSessionStaysIdleAndNeverAutoplays() {

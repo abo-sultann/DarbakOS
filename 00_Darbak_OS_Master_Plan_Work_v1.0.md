@@ -1,109 +1,158 @@
-# Darbak OS — Master Plan for Work v1.0
+# غضن | GDN — Master Plan for Work v1.1
 
 ## Mission
-Build Darbak OS as the unified in-car experience for the owner's existing Allwinner T3 head unit. Android remains the stable hardware-compatibility base; Darbak replaces the normal day-to-day experience.
+Build GDN as a unified, modern in-car Android experience. Android remains the platform base; GDN owns the normal day-to-day driving experience while external specialist engines such as OsmAnd remain behind explicit integration boundaries.
 
-## Hard target
-- Device: t3-p3
-- SoC family: sun8iw11p1 / Allwinner T3
-- CPU: ARM Cortex-A7 / ARMv7
-- GPU: Mali-400
-- RAM: ~1 GB
-- Display: 1024x600 landscape
-- Baseline: Android 7.1 / API 25
-- Arabic RTL first, offline-first, lightweight.
-Do NOT treat T3L, T3-P1, or a generic "T3" firmware/device as compatible.
+## Product target
+- **Primary software target:** latest stable Android; current P10 baseline is Android 17 / API37.
+- **Current build contract:** `compileSdk 37`, `targetSdk 37`, `minSdk 25`.
+- **Production hardware:** modern replacement Android head unit; exact SoC/RAM/display/OEM/CANBUS profile remains UNKNOWN until the physical unit is selected and inspected.
+- **Legacy regression floor:** Android 7.1 / API25. The former Allwinner T3 / ARMv7 / ~1 GB / 1024×600 platform is retained only as a lightweight regression floor and must not constrain modern architecture, UI or features.
+- Arabic RTL first, offline-first and truthful state presentation remain permanent product requirements.
 
-## Non-negotiable safety gate
-No low-level modification, firmware flash, MCU flash, destructive OEM removal, kernel replacement, or risky root action before the real unit has:
-1. Factory Settings snapshot.
-2. Read-only ADB hardware/system scan.
-3. System Version + MCU Version + getprop.
-4. Partition map and eMMC size.
-5. Root status and USB/OTG capability check.
-6. Darbak T3 Golden Backup as complete as safely possible.
-7. SHA-256 manifest verification.
-8. A documented recovery path appropriate to the exact board.
-9. Baseline functional tests.
-MCU update/flash is currently prohibited. External t3-p3 dumps are comparison references only.
+## Non-negotiable hardware safety gate
+No firmware flash, MCU flash, kernel replacement, destructive root, destructive OEM removal/hiding, boot replacement or system-app removal before the exact production unit has:
+1. Read-only hardware/system identity baseline.
+2. Android/API/build/fingerprint/SoC/RAM/display identity.
+3. OEM/CANBUS/ACC/autostart behavior recorded rather than assumed.
+4. Partition/storage/recovery information appropriate to that unit.
+5. Golden Backup as safely achievable.
+6. SHA-256 verification of retained recovery artifacts.
+7. A documented and tested recovery path.
+8. Baseline functional tests.
+MCU flashing remains prohibited until an explicit later decision backed by exact-device recovery evidence.
 
-## Golden Backup scope
-As available and safely readable: full eMMC image; boot, recovery, system, vendor, private, env, misc and all discovered partitions; partition map; /system/etc/goc/; touch/calibration and relevant OEM configuration; Export All Settings; important OEM APKs/services; getprop; build/fingerprint; System Version; MCU Version; partition sizes; hashes. Preserve factory-setting screenshots. PRIVATE is important but is not assumed to be a direct MCU-controller dump.
-
-## Firmware policy
-Current search branch only: t3-p3 + sun8iw11p1 + V8.3.2 + ZH5 + 1024x600. ZH5/V8.3.2 are candidates until verified against this exact unit. DoFun is a tools/recovery/APK/idea reference, not an approved firmware source. Booting is not proof of hardware compatibility.
+## Historical T3 policy
+The retired t3-p3 / sun8iw11p1 / Allwinner T3 unit is not the production target. Existing T3/API25 evidence remains useful for regression and historical comparison only. Old T3 firmware candidates, ZH5/V8.3.2 research and DoFun references do not authorize firmware use on the future production device.
 
 ## Development/test path
-Never use the real T3 as the first experiment target.
-Build/develop -> laptop/emulator initial tests -> 1024x600/API25/RTL/navigation/crash/resource tests -> Darbak Test Station (Acer/BlissOS) where useful -> candidate APK -> real T3 validation -> Stable.
-The T3 is the final acceptance gate.
+Never use the production head unit as the first experiment target.
 
-## Work quota policy
-Work usage is limited. Do not spend Work quota rediscovering requirements, doing broad research, or debating closed decisions.
-Work in small closed batches. Before starting the next batch:
-- complete the current smallest useful unit,
-- test it,
-- commit/push it,
-- update 01_CURRENT_STATUS.md,
-- update 02_NEXT_TASK.md,
-- append CHANGELOG.md and TEST_RESULTS.md where relevant.
-Never leave important progress only inside a Work session. GitHub is project memory and source of truth.
+Current path:
+`source/safety checks -> modern emulator/API37 -> focused compatibility tests -> modern visual/layout verification -> candidate APK -> exact production-head-unit commissioning -> hardware/OEM acceptance -> Stable`.
+
+API25 CI remains a regression floor where it still provides value, but failures caused solely by retired-device visual/resource limits must not force the modern product backwards.
+
+## Work checkpoint policy
+Work in small, closed batches. Before moving to the next batch:
+- complete the smallest useful unit;
+- test it with the narrowest meaningful gate;
+- commit/push it;
+- update `01_CURRENT_STATUS.md`;
+- update `02_NEXT_TASK.md`;
+- record durable test/change evidence where relevant.
+Never leave important project state only inside a chat session. GitHub is project memory and source of truth.
 
 ## Reuse-first policy
-Before implementing a component from scratch, check REFERENCES.md and suitable upstream projects. Prefer adapting a proven small component/concept when compatible with API25/ARMv7/~1GB/1024x600/RTL. Do not import an entire project or heavy dependency just because it exists. When code is reused, record source, license, modifications and destination component.
+Before implementing a component from scratch, check `REFERENCES.md` and suitable proven upstream work. Verify license, Android/API compatibility, ABI requirements, performance cost and maintenance risk. Reuse concepts or bounded components rather than importing heavy projects without need. Record source, license, modifications and consumer when code is reused.
 
 ## User experience
-Cold Boot -> Darbak signature/init -> Darbak Home. Normal use must not expose stock Android.
-Primary user areas: Home, Map, Media, Vehicle, Apps. Settings is secondary; technical Admin is hidden by intentional gesture with no PIN. Emergency Recovery is independent.
-Home is a dashboard, not an app grid: large km/h speed, navigation state, media, quiet vehicle state, useful quick actions.
-Normal state is quiet; show actionable abnormalities rather than constant OK indicators.
-No FM radio requirement. No weather/news/calendar/email core features. No heavy blur/video backgrounds.
+Normal use must present GDN, not a generic app-grid experience.
+
+Primary areas:
+- Home
+- Map
+- Media
+- Vehicle
+- Apps
+
+Settings is secondary; technical Admin is hidden behind an intentional gesture. Emergency recovery remains independent.
+
+Home is a driving dashboard, not a launcher grid. Visual priority is:
+**speed -> navigation -> media -> vehicle state -> secondary quick actions**.
+
+Normal state is quiet. Show actionable abnormalities rather than constant “OK” noise.
+
+No core requirement for FM radio, weather, news, calendar or email.
+
+## Modern UI / Visual Quality contract
+The modern product must look and behave like software designed for a strong current-generation head unit, not an Android 7 / 1024×600 interface enlarged to Full HD.
+
+Requirements:
+- Full-HD-and-up responsive landscape composition without assuming one final screen size.
+- Arabic RTL as the native layout direction.
+- Strong hierarchy and glanceability for driving.
+- Remove the heavy legacy top-bar feel.
+- Lightweight/transparent lower navigation where appropriate.
+- Modern cards/layers with restrained depth; avoid visual clutter and excessive blur.
+- Day/night readability.
+- Smooth, restrained motion/feedback that uses modern GPU capability without distracting the driver.
+- Large, consistent touch targets suitable for an in-car display.
+- No fabricated live data for visual effect.
+- API25 compatibility is regression-only and may not downgrade the modern visual system.
+- Final density, touch, brightness, thermal and animation tuning occurs on the physical production display.
 
 ## Core behavior
-- OsmAnd is the map/navigation engine; Darbak wraps it rather than rebuilding routing/maps.
-- Darbak Search uses OsmAnd/offline data where possible; My Places/Favorites are unified, not duplicated.
-- Trip Recorder is automatic and independent of OsmAnd UI/navigation.
+- OsmAnd is the offline map/navigation engine; GDN wraps it through the lightest stable external boundary rather than rebuilding routing/maps.
+- GDN owns Position/Trip independently from OsmAnd.
+- Trip Recorder is automatic once its approved runtime is active.
 - Media never auto-plays after cold boot/wake; restore state only.
 - Vehicle values always carry provenance/freshness; stale sensor values are never shown as live.
-- Standby is a lightweight calm driving display and never stops trip recording.
-- Voice, if implemented, is one-shot and physically triggered where proven; no always-listening assistant.
-- Day/Night Auto uses local date + GPS + sunrise/sunset; no light/headlight/MCU dependency.
-- Search and interactions simplify while MOVING; STOPPED temporary does not suddenly unlock everything; PARKED allows richer interaction.
-- External storage is preferred for large data, but Darbak core remains internal and functional without it.
-- Loss of one secondary source must not take down the OS experience.
+- GPS speed/location values have explicit freshness and expire to unavailable when updates stop.
+- Standby is a calm GDN UI state and does not silently stop trip recording.
+- Voice, if implemented later, remains one-shot/explicit unless a future safety decision changes it.
+- External/removable storage may be preferred for large data, but GDN core remains functional with internal storage and must surface storage degradation truthfully.
+- Loss of one secondary source must not collapse the overall experience.
+
+## Startup / power boundary
+Portable software may start continuous runtime only from an eligible user-visible path with required permissions. Generic `BOOT_COMPLETED`, ACC or OEM startup behavior is not assumed across Android head units.
+
+Exact boot/wake/ACC/autostart integration belongs behind a hardware-specific adapter after the production unit is identified and recovery is proven.
+
+Sudden power loss must be considered separately from normal shutdown. Trip persistence uses bounded chunks and synchronized commits; the active uncommitted buffer is a known exposure window documented in the P10 review.
 
 ## Architecture responsibilities
-Core/Boot/Navigation/Common; Home; Maps integration; Media; Vehicle; Apps; Settings; Guardian; Diagnostics; Health; Update; Admin; Trip/Position; Data; Display/Touch; Audio; Input; Hardware abstraction; Storage/Backup; Connectivity.
-Do not split into processes/APKs unless isolation benefit justifies RAM cost.
+Core/Startup/Navigation/Common; Home; Maps integration; Media; Vehicle; Apps; Settings; Guardian; Diagnostics; Health; Update; Admin; Trip/Position; Data; Display/Touch; Audio; Input; Hardware abstraction; Storage/Backup; Connectivity.
+
+Do not split into extra processes/APKs unless isolation benefit clearly justifies complexity and resource cost.
 
 ## Reliability
-Guardian monitors crash/ANR/black-screen/liveness/freshness and uses staged recovery. Preserve Known Good/Stable separately from TEST. Updates require compatibility checks, snapshot, verification and rollback path. A degraded external source is not Safe Mode. Never display stale navigation/TPMS/GPS/vehicle data as current.
-
-## Session/power
-Support Sleep, clean shutdown and sudden power loss without assuming which the T3 actually uses. Continuous safe-save plus fast final save. Wake restores healthy context quickly; Cold Boot always lands on Home. Navigation may offer Quick Resume rather than blindly reopening. Trip continuity is independent.
+Guardian remains passive unless a later phase explicitly approves active recovery behavior. Preserve Known Good/Stable separately from TEST. Updates require compatibility inspection, integrity verification and a proven recovery/rollback path before destructive operations. A degraded external source is not Safe Mode. Never display stale navigation/TPMS/GPS/vehicle data as current.
 
 ## Data/storage
-Clear ownership of data, live state separate from history, safe chunked trip recording, rotating logs, schema/config migrations with rollback, event bus, retention rules, emergency internal buffer when external storage disappears. No Firebase/cloud dependency.
+Maintain clear ownership of data, live state separate from history, safe chunked trip recording, rotating logs, schema/config migrations with rollback where needed, bounded retention and emergency internal fallback when removable storage fails. No Firebase/cloud dependency.
 
-## Update/acceptance
-Stable requires: build -> initial/emulator tests -> real T3 install -> boot/wake -> Home -> touch -> GPS/Trip -> Media -> essential Vehicle -> resource/crash check. Module updates test module + dependencies. T3 stability beats newest version.
+## Physical production-head-unit commissioning
+Emulator success proves software compatibility only. It does not approve a real screen or head unit.
 
-## First execution phases
-P0 Repository/process baseline.
-P1 Laptop development/test environment and minimal Darbak shell at API25/1024x600 RTL.
-P2 Home/navigation shell and design system with fake/test data only.
-P3 Core state/services + Guardian basics + logging/reporting.
-P4 OsmAnd integration + Position/Trip.
-P5 Media.
-P6 Vehicle data integration.
-P7 Apps/Settings/Standby/alerts.
-P8 Update/Admin/Recovery integration.
-P9 Real T3 commissioning + Golden Backup/recovery verification BEFORE deep system integration.
-P10 T3 integration, OEM hiding/autostart/boot experience only after P9 passes.
-P11 Stable acceptance.
+When the exact production device is available:
+1. Collect read-only identity/baseline.
+2. Run bounded GDN APK smoke.
+3. Verify display/touch/RTL/brightness and real performance.
+4. Verify TPMS/ESP32 connectivity.
+5. Verify physical GNSS and TripRuntime behavior.
+6. Verify real audio routing and removable-media/USB behavior.
+7. Verify real OsmAnd build/version and returned navigation information.
+8. Measure CANBUS/OEM/ACC/boot/wake behavior.
+9. Establish and verify recovery/Golden Backup/hash evidence.
+10. Only after those gates consider deeper OEM/autostart integration.
+
+## Phase map
+- **P0** Repository/process baseline — CLOSED.
+- **P1** Development/test environment and initial shell — CLOSED in its historical scope.
+- **P2** Home/navigation shell and design foundation — CLOSED in its historical scope.
+- **P3** Core state/services + Guardian foundation — CLOSED.
+- **P4** OsmAnd boundary + Position/Trip — CLOSED in software scope.
+- **P5** Media — CLOSED in software scope.
+- **P6** Vehicle data foundation — CLOSED in software scope.
+- **P7** Apps/Settings/Standby/alerts — CLOSED in software scope.
+- **P8** Update/Admin/Recovery readiness — CLOSED in software scope.
+- **P9** Modern head-unit software readiness — PASS; physical commissioning PENDING.
+- **P10** Android-modern compatibility + Modern UI + integration boundaries — ACTIVE. API37 compatibility review PASS; Modern UI / Visual Quality is the next software gate; OEM/ACC/USB/GNSS/audio/CANBUS physical integration remains pending exact hardware.
+- **P11** Stable acceptance — after P10 and physical commissioning.
+
+## P10 evidence
+Current review matrix: `docs/P10_ANDROID_MODERN_REVIEW.md`.
+
+Verified compatibility run: GitHub Actions `37667936775` on implementation head `77da6df90bbfffc869a927ea39673ef9220c4cf2` — SUCCESS, with API37 Build/Lint, API25 regression floor and the focused Android-modern review gate all passing.
 
 ## Stop conditions
-If a task requires firmware/MCU/kernel/destructive root changes, stop that task and document why. If an upstream dependency requires >API25/unsupported ABI/excessive resources, do not force it into the project. If the exact T3 capability is unknown, mark UNKNOWN and test it later rather than assuming.
+Stop and document rather than assume when:
+- a task requires firmware/MCU/kernel/destructive-root action before recovery is proven;
+- exact OEM/ACC/CANBUS behavior is unknown;
+- a physical claim cannot be established in emulator;
+- a dependency has unacceptable license/security/performance cost;
+- a test failure is infrastructure/test-harness related rather than production-code related—fix the harness and preserve the production contract.
 
 ## Work instruction
-Start only from 02_NEXT_TASK.md. Do not redesign the project or reopen closed decisions unless testing proves a conflict. Finish, test, push and checkpoint every batch so another ChatGPT session can continue immediately.
+Start from `02_NEXT_TASK.md`. Do not reopen closed decisions without test evidence of a conflict. Finish, test, commit and checkpoint each batch so another session can continue immediately.

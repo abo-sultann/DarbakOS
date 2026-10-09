@@ -4,4 +4,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = 'DarbakOS'
-include ':app', ':mediafixture'
+include ':app', ':mediafixture', ':osmandfixture'

@@ -1,22 +1,34 @@
-# Darbak OS
+# غضن | GDN
 
-Unified in-car operating experience for the owner's Allwinner T3 head unit.
+تجربة قيادة موحّدة لشاشات Android الحديثة في السيارة.
 
-**Target:** t3-p3 / sun8iw11p1 / Android 7.1 API25 / ARMv7 / ~1GB RAM / 1024x600 landscape.
+> **ملاحظة انتقالية:** اسم المستودع وبعض أسماء الحزم/الرموز الداخلية ما زالت تحمل `DarbakOS` لأسباب توافق وهجرة تقنية. الهوية الحالية للمنتج هي **غضن | GDN**، ولا يُستخدم الاسم السابق كهوية للمستخدم.
 
-## Start here
-1. `00_Darbak_OS_Master_Plan_Work_v1.0.md`
-2. `01_CURRENT_STATUS.md`
-3. `02_NEXT_TASK.md`
-4. `REFERENCES.md`
-5. `TEST_RESULTS.md`
+## الهدف الحالي
+- **هدف الإنتاج البرمجي:** Android 17 / API 37.
+- **ملف الاختبار الحديث الحالي:** شاشة أفقية من فئة Full HD؛ مواصفات شاشة الإنتاج الفعلية من معالج/RAM ودقة وخصائص OEM تبقى غير مفترضة حتى وصول الشاشة البديلة وفحصها فعليًا.
+- **حد الانحدار القديم فقط:** Android 7.1 / API 25. منصة Allwinner T3 القديمة بدقة 1024×600 وذاكرة تقارب 1 GB لم تعد هدف إنتاج، ولا يجوز أن تقيّد معمارية أو واجهة أو مزايا غضن الحديثة.
+- العربية وRTL والعمل دون إنترنت وحالات عدم التوفر الصادقة متطلبات أساسية للمنتج.
 
-## Critical rule
-The real T3 is the final validation target, not the first experiment target. No deep system/firmware work before the exact unit's Factory Snapshot, read-only scan, Golden Backup, SHA-256 verification and recovery path are established.
+## المرحلة الحالية
+P0–P8 مغلقة ضمن نطاقها البرمجي الموثق. P9 أثبت جاهزية البرنامج الحديث، بينما القبول الفعلي على شاشة السيارة ما زال معلقًا. P10 نشط: توافق Android الحديث أخضر على API37، وبدأت طبقة **Modern UI / Visual Quality** بهوية غضن المتجاوبة للشاشات الكبيرة. اختبارات ACC/boot/USB/GNSS/audio/CANBUS/OEM النهائية مرتبطة بالعتاد الفعلي.
 
-GitHub is the durable source of truth so work can continue across ChatGPT/Work quota boundaries.
+راجع سجل P10 الحالي: [`docs/P10_ANDROID_MODERN_REVIEW.md`](docs/P10_ANDROID_MODERN_REVIEW.md).
 
-## P1 test shell
-Build/emulator steps: [docs/P1_BUILD_AND_TEST.md](docs/P1_BUILD_AND_TEST.md).
-Use `01_CURRENT_STATUS.md` and `TEST_RESULTS.md` for the actual validation state.
-Verified P1 Home: [API25 emulator screenshot](docs/test-evidence/p1-20260927/home-1024x600.png).
+## ابدأ من هنا
+1. `01_CURRENT_STATUS.md`
+2. `02_NEXT_TASK.md`
+3. `docs/P10_ANDROID_MODERN_REVIEW.md`
+4. `00_Darbak_OS_Master_Plan_Work_v1.0.md` — اسم تاريخي سيُهاجر توثيقيًا.
+5. `REFERENCES.md`
+6. `TEST_RESULTS.md`
+
+## قاعدة العتاد الحرجة
+نجاح المحاكي يثبت التوافق البرمجي فقط، ولا يعتمد شاشة إنتاج. لا Firmware/MCU/Kernel flashing ولا Root تدميري ولا إزالة مكونات نظام قبل توثيق الشاشة الفعلية، والتحقق من مسار Recovery، وإنشاء Golden Backup/Hash متى كان ذلك ممكنًا.
+
+لا نفترض BOOT_COMPLETED أو ACC بشكل عام. بدء التشغيل الخاص بالمصنع وCANBUS والوسائط القابلة للإزالة وGPS والصوت الفعلي وضبط الكثافة/السطوع/الحرارة تُعتمد فقط على الجهاز الحقيقي.
+
+## أحدث دليل توافق
+GitHub Actions run `37982275776` (CI #367) على الفرع `p10-review-fixes-20261006` نجح على commit `93891857d16945be7200e80fa5d24afd5e10c2cf`: Android 17/API37 + Modern Review Gate + API25 Legacy Regression Floor.
+
+GitHub هو المرجع الدائم لحالة المشروع.

@@ -12,7 +12,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Lightweight OsmAnd boundary for P4. Darbak uses the official exported Android entry points
+ * Lightweight OsmAnd boundary for P4. GDN uses the official exported Android entry points
  * and OsmAnd external URI API without embedding/forking OsmAnd or copying its GPL AIDL sources.
  */
 public final class OsmAndBridge {
@@ -54,7 +54,7 @@ public final class OsmAndBridge {
         return resolvePackage();
     }
 
-    /** Capability probe only. Darbak does not vendor OsmAnd's AIDL source in this phase. */
+    /** Capability probe only. GDN does not vendor OsmAnd's AIDL source in this phase. */
     public boolean aidlServiceAvailable() {
         String packageName = resolvePackage();
         if (packageName == null) return false;
@@ -100,7 +100,7 @@ public final class OsmAndBridge {
     }
 
     /**
-     * Opens OsmAnd destination search. With a Darbak GPS fix, use the documented external API;
+     * Opens OsmAnd destination search. With a GDN GPS fix, use the documented external API;
      * without a fix, use the standard geo search URI rather than inventing a search location.
      */
     public boolean openSearch(String query, PositionFix around) {
@@ -191,7 +191,7 @@ public final class OsmAndBridge {
                     launchable.add(candidate);
                 }
             } catch (RuntimeException ignored) {
-                // Broken/partially installed packages remain unavailable instead of crashing Darbak.
+                // Broken/partially installed packages remain unavailable instead of crashing GDN.
             }
         }
         return OsmAndPackages.select(launchable);

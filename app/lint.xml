@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+      MainActivity deliberately opts out of predictive-back dispatch in the manifest while its
+      custom section/standby navigation is migrated with the Modern UI gate. Android officially
+      supports this per-activity transition path; do not broaden this suppression to other issues.
+    -->
+    <issue id="GestureBackNavigation" severity="ignore" />
+</lint>

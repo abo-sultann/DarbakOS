@@ -1,12 +1,12 @@
-# Darbak OS References
+# غضن | GDN — References
 
-Permanent reuse log. Before building from scratch, check these sources and inspect the exact upstream version. When code is reused, record source commit/tag, license, Darbak destination, modifications and API25/ARMv7/resource test result.
+Permanent reuse log. Before building from scratch, check these sources and inspect the exact upstream version. When code is reused, record source commit/tag, license, GDN destination, modifications and API25/ARMv7/resource test result.
 
-| Reference | URL | Use in Darbak | Type | Compatibility / rule |
+| Reference | URL | Use in GDN | Type | Compatibility / rule |
 |---|---|---|---|---|
 | OsmAnd | https://github.com/osmandapp/OsmAnd | Offline maps/search/navigation/favorites/routing integration | Engine/API/reference | Primary map engine. Prefer AIDL/API/wrapper; avoid unnecessary core fork. Pin an API25/ARMv7-compatible version after testing. |
-| Open Launcher | https://github.com/dw2lam/openlauncher | Offline-first/OEM+ launcher ideas, GPS/dashboard/day-night patterns | Concept/reference | Inspect small reusable patterns only; Darbak keeps fixed lightweight automotive cards rather than importing its full widget system. |
-| Dashline | https://github.com/metehankaygsz/dashline | Old/weak Android head-unit implementation patterns, classic Views, media/app shortcuts, adaptive cards | High-priority code/reference candidate | Runs on Android 4.4+ and no Play Services. Current project is GPLv3; code reuse requires license review before copying into Darbak. Concepts may be reimplemented independently. |
+| Open Launcher | https://github.com/dw2lam/openlauncher | Offline-first/OEM+ launcher ideas, GPS/dashboard/day-night patterns | Concept/reference | Inspect small reusable patterns only; GDN keeps fixed lightweight automotive cards rather than importing its full widget system. |
+| Dashline | https://github.com/metehankaygsz/dashline | Old/weak Android head-unit implementation patterns, classic Views, media/app shortcuts, adaptive cards | High-priority code/reference candidate | Runs on Android 4.4+ and no Play Services. Current project is GPLv3; code reuse requires license review before copying into GDN. Concepts may be reimplemented independently. |
 | Femto Car Launcher | https://github.com/seijikohara/femto-car-launcher | Stable/nightly separation, test discipline, glanceable UI, failure/backoff ideas | Concept/reference | Requires Android 13/API33; do not import its modern stack into T3/API25. |
 | Helm head-unit platform | https://github.com/HelmMobile/helm | Launcher/hardware/MCU separation ideas | Architecture concept | Newer hardware; ideas only until individually verified. |
 | LibAuto | https://github.com/f1xpl/LibAuto | Car-state/night/GPS/key channel concepts | Concept/reference | Inspect exact code/license/Android requirements before reuse. |
@@ -14,7 +14,7 @@ Permanent reuse log. Before building from scratch, check these sources and inspe
 | BMW iDrive Launcher references | Search/verify exact upstream before code reuse | Crash/ANR/black-screen monitoring, staged recovery | Concept/reference | Reimplement for API25 unless an exact compatible source is verified. |
 | Minimal Car Launcher | Search/verify exact upstream before code reuse | Lightweight GPS/quick-card/startup concepts | Concept/reference | Do not copy until exact upstream/license is recorded. |
 | KSW Car Project | Search/verify exact upstream before code reuse | MCU communicator/EventCenter patterns | Architecture concept | Reference only. |
-| CarRadio / TWUtil / TWClient references | Search/verify exact upstream before code reuse | Evidence/reference for T3 vendor APIs | Platform reference | FM radio excluded. Investigate only non-radio T3 functions useful to Darbak. |
+| CarRadio / TWUtil / TWClient references | Search/verify exact upstream before code reuse | Evidence/reference for T3 vendor APIs | Platform reference | FM radio excluded. Investigate only non-radio T3 functions useful to GDN. |
 | 4PDA/XDA Allwinner T3 material | Community sources | SWC, sleep/ACC, factory settings, USB, MCU mismatch evidence | Community reference | Device-specific/anecdotal; never generalize without exact-unit validation. |
 | DoFun / T3 Firmware channels | Telegram/community sources | Recovery/tools/APKs/boot-animation/TS-T3 ideas | Tool/reference | No DoFun firmware approved for this unit. |
 | t3-p3 Android 7.1.1 dumps | External reference dumps | Partition/file/build comparison | Comparison only | NEVER substitute for this unit's Golden Backup. |
@@ -33,7 +33,7 @@ For every code-level reuse append:
 - Commit/tag
 - Source file/component
 - License
-- Darbak destination
+- GDN destination
 - Why reuse is preferable
 - Changes made
 - minSdk/API/ABI/dependency check

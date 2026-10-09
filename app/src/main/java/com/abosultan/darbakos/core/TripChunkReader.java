@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Strict reader for committed Darbak trip chunks; partial files are never accepted as history. */
+/** Strict reader for committed GDN trip chunks; partial files are never accepted as history. */
 public final class TripChunkReader {
     private static final int MAGIC = 0x44545250;
     private static final int VERSION_1 = 1;

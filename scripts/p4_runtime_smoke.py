@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded P4 API25 verification for continuous GPS/trips and final Darbak Map surface."""
+"""Bounded P4 API25 verification for continuous GPS/trips and final GDN Map surface."""
 from pathlib import Path
 import hashlib
 import json

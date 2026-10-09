@@ -2,7 +2,7 @@ package com.abosultan.darbakos.core;
 
 import java.util.Set;
 
-/** Known official OsmAnd Android package variants, ordered for Darbak preference. */
+/** Known official OsmAnd Android package variants, ordered for GDN preference. */
 public final class OsmAndPackages {
     public static final String FULL = "net.osmand.plus";
     public static final String FREE = "net.osmand";

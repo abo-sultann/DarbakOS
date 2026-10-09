@@ -6,10 +6,10 @@ public final class PositionRuntimePolicy {
 
     private PositionRuntimePolicy() { }
 
-    public static Owner owner(boolean darbakUiVisible,
+    public static Owner owner(boolean uiVisible,
                               boolean tripRecording,
                               boolean externalNavigationActive) {
         if (tripRecording || externalNavigationActive) return Owner.CONTINUOUS;
-        return darbakUiVisible ? Owner.ACTIVITY : Owner.NONE;
+        return uiVisible ? Owner.ACTIVITY : Owner.NONE;
     }
 }

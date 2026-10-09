@@ -14,7 +14,7 @@ adb("shell","monkey","-p","com.abosultan.darbakos.test","-c","android.intent.cat
 time.sleep(2)
 out=adb("shell","dumpsys","window","windows")
 if "com.abosultan.darbakos.test" not in out:
-    raise SystemExit("FAIL: DarbakOS is not foreground")
+    raise SystemExit("FAIL: GDN is not foreground")
 size=adb("shell","wm","size")
 density=adb("shell","wm","density")
 errors=adb("logcat","-d","-t","300")

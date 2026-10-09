@@ -1,0 +1,19 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'net.osmand.fixture'
+    compileSdk 37
+
+    defaultConfig {
+        applicationId 'net.osmand'
+        minSdk 25
+        targetSdk 25
+        versionCode 1
+        versionName 'fixture'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}

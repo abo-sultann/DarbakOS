@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded API25 verification for the first Darbak P7 Apps slice."""
+"""Bounded API25 verification for the first GDN P7 Apps slice."""
 from pathlib import Path
 import subprocess
 ROOT=Path(__file__).resolve().parents[1]
