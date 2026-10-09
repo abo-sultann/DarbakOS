@@ -1,22 +1,24 @@
 # غضن | GDN — Current Status
 
-**Updated:** 2026-10-10
+**Updated:** 2026-10-10  
 **Authority:** GitHub repository state and verified CI evidence.
 
 ## Phase state
 - **P0–P8:** CLOSED within documented software scope.
 - **P9:** SOFTWARE READINESS PASS / PHYSICAL COMMISSIONING PENDING.
-- **P10:** ACTIVE — final documentation/review stage.
+- **P10:** **SOFTWARE CLOSED / MERGED TO MAIN**.
   - Android-modern compatibility: **PASS — Android 17 / API37**.
-  - Modern UI / Visual Quality foundation: **PASS in software CI**.
-  - GDN identity migration: **ACTIVE**, with compatibility-sensitive legacy identifiers intentionally retained where required.
+  - Modern UI / Visual Quality software foundation: **PASS**.
+  - GDN identity audit/migration: **PASS within bounded safe scope**; compatibility-sensitive legacy identifiers intentionally retained.
+  - PR #1 merged to `main` at `1e2cc0185653ea9dcacabb51d9128857f143befa`.
+  - Post-merge `main` CI run `38000534974` / #374: **SUCCESS**.
   - OEM/ACC/boot/USB/GNSS/audio/CANBUS physical integration: **PENDING — PHYSICAL HEAD UNIT**.
-- **P11:** Not started; follows P10 closure and physical commissioning.
+- **P11:** Not started. Do not invent software scope before the next approved objective or physical commissioning input.
 
 ## Product identity
-The current product identity is **غضن | GDN**. `DarbakOS` may remain in repository/package/class/preferences identifiers only where changing it creates migration or compatibility risk. It is not the current user-facing brand.
+The current product identity is **غضن | GDN**. `DarbakOS` may remain in repository/package/class/preferences/artifact identifiers only where changing it creates migration, persistence, Android-component or external-consumer risk. These retained identifiers are technical compatibility debt, not current branding.
 
-Bounded identity audit completed on 2026-10-10: safe visible/documentation remnants updated; compatibility identifiers and historical evidence retained. Scope, A/B/C classification and local validation: [`docs/GDN_IDENTITY_AUDIT.md`](docs/GDN_IDENTITY_AUDIT.md). This does not close P10 or approve a merge.
+Bounded identity audit: [`docs/GDN_IDENTITY_AUDIT.md`](docs/GDN_IDENTITY_AUDIT.md).
 
 ## Authoritative target
 - Production software target: **Android 17 / API37**.
@@ -25,38 +27,39 @@ Bounded identity audit completed on 2026-10-10: safe visible/documentation remna
 - Retired Allwinner T3 / 1024×600 / ~1 GB hardware must not constrain the modern product.
 - Exact production SoC/RAM/display/OEM/CANBUS/ACC profile remains intentionally unknown until the replacement head unit is physically inspected.
 
-## P10 verified software gate
-Working branch: `p10-review-fixes-20261006`  
-Draft PR: #1 — `P10: Android 17 migration + review gate`  
-Latest fully verified UI baseline commit: `93891857d16945be7200e80fa5d24afd5e10c2cf`  
-Verified CI: run `37982275776` / #367 — **SUCCESS**.
+## P10 final verified gate
+Final reviewed branch head before merge: `855731e4ce23c5cdea117c552ac449703921a8f0`  
+Pre-merge CI: run `37993383810` / #373 — **SUCCESS**  
+Merge commit on `main`: `1e2cc0185653ea9dcacabb51d9128857f143befa`  
+Post-merge CI: run `38000534974` / #374 — **SUCCESS**.
 
 Verified coverage includes:
 - API37 Build + Lint and Android 17 emulator;
-- API25 legacy regression floor;
-- clean-install location permission flow and Precise/Approximate/Denied policy;
+- API25 Legacy Regression Floor;
+- clean-install location permission flow and Precise/Approximate/Denied/revoked policy;
 - `READ_MEDIA_AUDIO`, MediaStore and Content URI playback contracts;
 - stale MediaStore URI invalidation;
 - OsmAnd visibility/present/missing integration fixture;
-- RuntimeStartPolicy + StartupCoordinator;
+- RuntimeStartPolicy + StartupCoordinator with no generic BootReceiver/ACC assumption;
 - GPS foreground runtime and stale-position expiry;
 - trip-storage write failure/internal fallback/status reporting;
 - modern head-unit layout/navigation gate;
-- existing portable P4/P5 regression coverage.
+- bounded GDN identity cleanup without namespace/persistence migration;
+- existing portable regression coverage retained.
 
-## P10 disposition
-1. **Location — PASS.** Precise/Approximate/Denied distinguished; trip runtime requires eligible precise location.
-2. **Media/USB software — PASS.** Modern permission/MediaStore/URI behavior covered. Real removable-media unplug/reinsert: **PENDING — PHYSICAL HEAD UNIT**.
-3. **Apps/OsmAnd — PASS in software.** Real production OsmAnd build remains a commissioning check.
-4. **GPS Runtime — PASS in software.** No generic BootReceiver/ACC assumption.
-5. **GPS Freshness — PASS.** Stale fixes expire instead of remaining falsely live.
-6. **Trip Storage — PASS in software.** External failure falls back internally with retained pending points and visible state. Maximum active uncommitted chunk = 60 fixes; approximately 60 seconds at nominal 1 Hz.
-7. **Transition CI — PASS.** Focused modernization tests execute explicitly.
-8. **Modern UI / Visual Quality — PASS as software foundation.** GDN palette, responsive large-screen dimensions and dedicated large-head-unit presentation styles are CI-green. Final density/brightness/touch/thermal/readability tuning: **PENDING — PHYSICAL HEAD UNIT**.
-9. **Documentation / GDN migration — ACTIVE.** README and current status aligned; remaining project records are being normalized before final P10 review.
+## P10 final disposition
+1. **Location — PASS.**
+2. **Media/USB software — PASS.** Real removable-media unplug/reinsert: **PENDING — PHYSICAL HEAD UNIT**.
+3. **Apps/OsmAnd — PASS in software.** Real installed OsmAnd remains commissioning verification.
+4. **GPS Runtime — PASS in software.**
+5. **GPS Freshness — PASS.**
+6. **Trip Storage — PASS in software.** Maximum active uncommitted chunk = 60 fixes; approximately 60 seconds at nominal 1 Hz.
+7. **Transition CI — PASS.**
+8. **Modern UI / Visual Quality software foundation — PASS.** Final density/brightness/touch/thermal/readability tuning: **PENDING — PHYSICAL HEAD UNIT**.
+9. **Documentation / GDN migration — PASS for P10 software closure.** Historical evidence is intentionally preserved.
 
 ## Physical commissioning
-Emulator success is not physical approval. The following remain **PENDING — PHYSICAL HEAD UNIT**:
+Emulator/CI success is not physical approval. The following remain **PENDING — PHYSICAL HEAD UNIT**:
 - exact display fit/density/brightness/thermal behavior;
 - real USB mount/unmount/remount;
 - physical GNSS;
@@ -65,6 +68,6 @@ Emulator success is not physical approval. The following remain **PENDING — PH
 - CANBUS/OEM integration;
 - recovery readiness and Golden Backup/hash.
 
-Required order before destructive platform work: exact-device baseline → bounded GDN APK smoke → TPMS/ESP32 → GPS → Media/OsmAnd → CANBUS/OEM → verified recovery/Golden Backup → only then deeper startup/OEM integration.
+Required order before destructive platform work: exact-device baseline → bounded GDN APK smoke → TPMS/ESP32 → GNSS/TripRuntime → Media/OsmAnd → CANBUS/OEM → verified Recovery/Golden Backup → only then deeper startup/OEM integration.
 
 GitHub remains the project-state authority. Historical evidence remains in `TEST_RESULTS.md` and `docs/test-evidence/`.
