@@ -18,7 +18,7 @@ public final class LocalMediaPlaybackTest {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File wav = new File(context.getCacheDir(), "darbak-local-playback.wav");
         writeSilentWav(wav, 8000, 2);
-        LocalMediaTrack track = new LocalMediaTrack(wav, "Local Playback", "Darbak",
+        LocalMediaTrack track = new LocalMediaTrack(wav, "Local Playback", "GDN",
                 wav.length(), wav.lastModified());
         AtomicBoolean playing = new AtomicBoolean(false);
         AtomicBoolean error = new AtomicBoolean(false);

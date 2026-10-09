@@ -53,7 +53,7 @@ def tap_id(suffix):
 adb("shell", "am", "force-stop", PKG)
 adb("shell", "am", "start", "-W", "-n", ACTIVITY)
 time.sleep(1.0)
-assert PKG in current_window(), "DarbakOS did not reach foreground"
+assert PKG in current_window(), "GDN did not reach foreground"
 assert trip_running(), "Trip runtime is not running before opening OsmAnd"
 
 tap_id("nav_map")
@@ -64,7 +64,7 @@ assert trip_running(), "Trip runtime stopped when OsmAnd became foreground"
 
 adb("shell", "input", "keyevent", "4")
 time.sleep(1.0)
-assert PKG in current_window(), "DarbakOS did not return after Back from OsmAnd"
+assert PKG in current_window(), "GDN did not return after Back from OsmAnd"
 assert trip_running(), "Trip runtime did not survive OsmAnd round-trip"
 
 print("PASS: TripRuntimeService remains active while OsmAnd is foreground and after returning")

@@ -17,7 +17,7 @@ import java.io.IOException;
 
 /**
  * Continuous position/trip runtime with an API25 regression floor and modern foreground mode.
- * One worker owns GPS callbacks and trip persistence so disk I/O never blocks Darbak UI.
+ * One worker owns GPS callbacks and trip persistence so disk I/O never blocks GDN UI.
  */
 public final class TripRuntimeService extends Service implements AndroidGpsSource.Callback {
     private static final String CHANNEL_ID = "darbak_trip_runtime";
@@ -121,13 +121,14 @@ public final class TripRuntimeService extends Service implements AndroidGpsSourc
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (manager != null) {
             NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, "Darbak Trip", NotificationManager.IMPORTANCE_LOW);
+                    CHANNEL_ID, getString(com.abosultan.darbakos.R.string.brand) + " • Trip",
+                    NotificationManager.IMPORTANCE_LOW);
             channel.setDescription("Continuous vehicle position and trip recording");
             manager.createNotificationChannel(channel);
         }
         Notification notification = new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(com.abosultan.darbakos.R.drawable.ic_darbak)
-                .setContentTitle("Darbak")
+                .setContentTitle(getString(com.abosultan.darbakos.R.string.brand))
                 .setContentText("GPS and trip recording active")
                 .setOngoing(true)
                 .build();

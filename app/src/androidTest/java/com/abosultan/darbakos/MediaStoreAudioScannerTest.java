@@ -31,7 +31,7 @@ public final class MediaStoreAudioScannerTest {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         ContentResolver resolver = context.getContentResolver();
         MediaStoreAudioScanner scanner = new MediaStoreAudioScanner();
-        String title = "Darbak-CI-" + System.nanoTime();
+        String title = "GDN-CI-" + System.nanoTime();
 
         Uri first = insertAudio(resolver, title);
         try {
@@ -57,7 +57,7 @@ public final class MediaStoreAudioScannerTest {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Audio.Media.DISPLAY_NAME, title + ".mp3");
         values.put(MediaStore.Audio.Media.TITLE, title);
-        values.put(MediaStore.Audio.Media.ARTIST, "Darbak");
+        values.put(MediaStore.Audio.Media.ARTIST, "GDN");
         values.put(MediaStore.Audio.Media.MIME_TYPE, "audio/mpeg");
         values.put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/DarbakCI");
         Uri primary = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);

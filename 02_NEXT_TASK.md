@@ -13,7 +13,7 @@ Android-modern compatibility and the modern GDN UI foundation are green. Do **no
 
 ## Next software task — close P10
 1. Finish documentation alignment: `TEST_RESULTS.md`, `CHANGELOG.md` where present, and `docs/P10_ANDROID_MODERN_REVIEW.md`.
-2. Audit remaining visible `Darbak` branding and remove only safe user-facing/documentation remnants.
+2. **DONE — 2026-10-10:** bounded `Darbak` identity audit; safe visible/documentation remnants updated. See [`docs/GDN_IDENTITY_AUDIT.md`](docs/GDN_IDENTITY_AUDIT.md) for retained compatibility identifiers and untouched history. No later task is authorized by this audit.
 3. Preserve compatibility-sensitive identifiers unless a tested migration exists, including package namespace, persisted preference names and any update-package compatibility contract.
 4. Run final CI on the documentation/identity head and require green API25 + API37 gates.
 5. Review PR #1 for unresolved review threads/comments and final diff risks.

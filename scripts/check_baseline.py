@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline source guard for current Darbak OS constraints; not a substitute for Android tests."""
+"""Offline source guard for current GDN constraints; not a substitute for Android tests."""
 from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
@@ -61,7 +61,7 @@ assert activity.get(A + 'screenOrientation') == 'landscape'
 assert activity.get(A + 'enableOnBackInvokedCallback') == 'false', \
     'MainActivity currently uses the official per-activity predictive-back migration opt-out'
 assert all(c.get(A + 'name') != 'android.intent.category.HOME'
-           for c in activity.findall('.//category')), 'Darbak must not take over the device launcher yet'
+           for c in activity.findall('.//category')), 'GDN must not take over the device launcher yet'
 lint_config = ET.parse(ROOT / 'app/lint.xml').getroot()
 ignored_lint = {item.get('id') for item in lint_config.findall('issue') if item.get('severity') == 'ignore'}
 assert ignored_lint == {'GestureBackNavigation'}, \

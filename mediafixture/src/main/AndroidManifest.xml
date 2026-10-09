@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:label="Darbak Media Fixture" android:theme="@android:style/Theme.Material.Light">
+    <application android:label="غضن | GDN Media Fixture" android:theme="@android:style/Theme.Material.Light">
         <activity android:name=".FixtureActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

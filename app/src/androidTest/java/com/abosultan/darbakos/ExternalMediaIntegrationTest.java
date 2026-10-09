@@ -17,10 +17,10 @@ public final class ExternalMediaIntegrationTest {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
             scenario.onActivity(activity -> activity.findViewById(R.id.nav_media).performClick());
 
-            awaitText(scenario, R.id.media_now_title, "Darbak Fixture");
-            awaitText(scenario, R.id.media_now_artist, "Darbak CI Fixture");
+            awaitText(scenario, R.id.media_now_title, "GDN Fixture");
+            awaitText(scenario, R.id.media_now_artist, "GDN CI Fixture");
             awaitText(scenario, R.id.media_now_status, "متوقف مؤقتًا");
-            // Reaching PAUSED after Darbak attached proves observing did not auto-start playback.
+            // Reaching PAUSED after GDN attached proves observing did not auto-start playback.
             scenario.onActivity(activity -> {
                 assertTrue(activity.findViewById(R.id.media_play_pause_button).isEnabled());
                 assertTrue(activity.findViewById(R.id.media_previous_button).isEnabled());
@@ -32,9 +32,9 @@ public final class ExternalMediaIntegrationTest {
 
             awaitText(scenario, R.id.media_now_status, "قيد التشغيل");
             scenario.onActivity(activity -> activity.findViewById(R.id.media_next_button).performClick());
-            awaitText(scenario, R.id.media_now_title, "Darbak Fixture Next");
+            awaitText(scenario, R.id.media_now_title, "GDN Fixture Next");
             scenario.onActivity(activity -> {
-                assertEquals("Darbak Fixture Next",
+                assertEquals("GDN Fixture Next",
                         ((TextView) activity.findViewById(R.id.media_track)).getText().toString());
                 assertEquals("قيد التشغيل",
                         ((TextView) activity.findViewById(R.id.media_state)).getText().toString());

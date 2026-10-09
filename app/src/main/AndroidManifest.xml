@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <queries>
-        <!-- Darbak's Apps panel discovers normal launchable applications without QUERY_ALL_PACKAGES. -->
+        <!-- GDN's Apps panel discovers normal launchable applications without QUERY_ALL_PACKAGES. -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

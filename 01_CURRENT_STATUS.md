@@ -1,6 +1,6 @@
 # غضن | GDN — Current Status
 
-**Updated:** 2026-10-09  
+**Updated:** 2026-10-10
 **Authority:** GitHub repository state and verified CI evidence.
 
 ## Phase state
@@ -15,6 +15,8 @@
 
 ## Product identity
 The current product identity is **غضن | GDN**. `DarbakOS` may remain in repository/package/class/preferences identifiers only where changing it creates migration or compatibility risk. It is not the current user-facing brand.
+
+Bounded identity audit completed on 2026-10-10: safe visible/documentation remnants updated; compatibility identifiers and historical evidence retained. Scope, A/B/C classification and local validation: [`docs/GDN_IDENTITY_AUDIT.md`](docs/GDN_IDENTITY_AUDIT.md). This does not close P10 or approve a merge.
 
 ## Authoritative target
 - Production software target: **Android 17 / API37**.

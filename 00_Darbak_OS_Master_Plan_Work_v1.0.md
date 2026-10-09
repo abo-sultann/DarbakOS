@@ -1,7 +1,7 @@
-# Darbak OS — Master Plan for Work v1.1
+# غضن | GDN — Master Plan for Work v1.1
 
 ## Mission
-Build Darbak OS as a unified, modern in-car Android experience. Android remains the platform base; Darbak owns the normal day-to-day driving experience while external specialist engines such as OsmAnd remain behind explicit integration boundaries.
+Build GDN as a unified, modern in-car Android experience. Android remains the platform base; GDN owns the normal day-to-day driving experience while external specialist engines such as OsmAnd remain behind explicit integration boundaries.
 
 ## Product target
 - **Primary software target:** latest stable Android; current P10 baseline is Android 17 / API37.
@@ -47,7 +47,7 @@ Never leave important project state only inside a chat session. GitHub is projec
 Before implementing a component from scratch, check `REFERENCES.md` and suitable proven upstream work. Verify license, Android/API compatibility, ABI requirements, performance cost and maintenance risk. Reuse concepts or bounded components rather than importing heavy projects without need. Record source, license, modifications and consumer when code is reused.
 
 ## User experience
-Normal use must present Darbak, not a generic app-grid experience.
+Normal use must present GDN, not a generic app-grid experience.
 
 Primary areas:
 - Home
@@ -83,15 +83,15 @@ Requirements:
 - Final density, touch, brightness, thermal and animation tuning occurs on the physical production display.
 
 ## Core behavior
-- OsmAnd is the offline map/navigation engine; Darbak wraps it through the lightest stable external boundary rather than rebuilding routing/maps.
-- Darbak owns Position/Trip independently from OsmAnd.
+- OsmAnd is the offline map/navigation engine; GDN wraps it through the lightest stable external boundary rather than rebuilding routing/maps.
+- GDN owns Position/Trip independently from OsmAnd.
 - Trip Recorder is automatic once its approved runtime is active.
 - Media never auto-plays after cold boot/wake; restore state only.
 - Vehicle values always carry provenance/freshness; stale sensor values are never shown as live.
 - GPS speed/location values have explicit freshness and expire to unavailable when updates stop.
-- Standby is a calm Darbak UI state and does not silently stop trip recording.
+- Standby is a calm GDN UI state and does not silently stop trip recording.
 - Voice, if implemented later, remains one-shot/explicit unless a future safety decision changes it.
-- External/removable storage may be preferred for large data, but Darbak core remains functional with internal storage and must surface storage degradation truthfully.
+- External/removable storage may be preferred for large data, but GDN core remains functional with internal storage and must surface storage degradation truthfully.
 - Loss of one secondary source must not collapse the overall experience.
 
 ## Startup / power boundary
@@ -117,7 +117,7 @@ Emulator success proves software compatibility only. It does not approve a real 
 
 When the exact production device is available:
 1. Collect read-only identity/baseline.
-2. Run bounded Darbak APK smoke.
+2. Run bounded GDN APK smoke.
 3. Verify display/touch/RTL/brightness and real performance.
 4. Verify TPMS/ESP32 connectivity.
 5. Verify physical GNSS and TripRuntime behavior.

@@ -18,12 +18,12 @@ public final class FixtureActivity extends Activity {
 
     private MediaSession session;
     private boolean playing;
-    private String title = "Darbak Fixture";
+    private String title = "GDN Fixture";
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         TextView label = new TextView(this);
-        label.setText("Darbak external media fixture");
+        label.setText("GDN external media fixture");
         label.setTextSize(24f);
         label.setPadding(32, 32, 32, 32);
         setContentView(label);
@@ -41,12 +41,12 @@ public final class FixtureActivity extends Activity {
             }
 
             @Override public void onSkipToNext() {
-                title = "Darbak Fixture Next";
+                title = "GDN Fixture Next";
                 publish();
             }
 
             @Override public void onSkipToPrevious() {
-                title = "Darbak Fixture Previous";
+                title = "GDN Fixture Previous";
                 publish();
             }
         }, new Handler(Looper.getMainLooper()));
@@ -58,7 +58,7 @@ public final class FixtureActivity extends Activity {
         if (session == null) return;
         session.setMetadata(new MediaMetadata.Builder()
                 .putString(MediaMetadata.METADATA_KEY_TITLE, title)
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, "Darbak CI Fixture")
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, "GDN CI Fixture")
                 .build());
         session.setPlaybackState(new PlaybackState.Builder()
                 .setActions(ACTIONS)

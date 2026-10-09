@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded API25 verification for Darbak P7 Standby."""
+"""Bounded API25 verification for GDN P7 Standby."""
 from pathlib import Path
 import subprocess
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/'test-evidence'; OUT.mkdir(exist_ok=True)
