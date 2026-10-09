@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Owner's Launcher.2026 palette; provenance in REFERENCES.md. -->
-    <color name="background">#07111D</color>
-    <color name="surface">#111D2B</color>
-    <color name="card">#101E2C</color>
-    <color name="border">#2D5573</color>
-    <color name="accent">#39A9FF</color>
-    <color name="gold">#D7AD55</color>
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#D0E2F1</color>
-    <color name="text_muted">#8299AA</color>
+    <!-- GDN visual identity v1.1 — October 2026. -->
+    <color name="background">#071B15</color>
+    <color name="surface">#0E3B2E</color>
+    <color name="card">#123F32</color>
+    <color name="border">#2E7D59</color>
+    <color name="accent">#2E7D59</color>
+    <color name="gold">#D7C3A5</color>
+    <color name="text_primary">#F6F3EC</color>
+    <color name="text_secondary">#DDE8E2</color>
+    <color name="text_muted">#9CB4A8</color>
     <color name="transparent">#00000000</color>
 </resources>
