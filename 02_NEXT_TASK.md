@@ -1,4 +1,4 @@
-# 02_NEXT_TASK — Post-P10 / Physical Commissioning Readiness
+# 02_NEXT_TASK — P11 Physical Commissioning Readiness
 
 P10 software modernization is **closed and merged to `main`**. Do **not** reopen broad Android-modern compatibility, identity cleanup or UI-foundation work unless a concrete regression appears.
 
@@ -11,29 +11,33 @@ P10 software modernization is **closed and merged to `main`**. Do **not** reopen
 - API25 Legacy Regression Floor: PASS.
 - Product identity: **غضن | GDN**.
 
-## Next approved work
-Until the replacement production head unit is physically available, keep software changes bounded to proven defects or clearly approved standalone features. Do not invent hardware assumptions.
+## Current next gate
+The next approved gate is now documented in:
 
-When the production head unit arrives, execute commissioning in this order:
-1. **Read-only baseline:** Android/API, build fingerprint, SoC, RAM/storage, display resolution/density, USB topology, OEM/MCU/CANBUS identity where observable without modification.
-2. **Bounded GDN APK smoke:** install/launch/Home/RTL/navigation between internal surfaces; capture logs and exact version/build identity.
-3. **TPMS/ESP32:** verify real connectivity and background behavior without changing firmware assumptions.
-4. **GNSS/TripRuntime:** real fixes, stale behavior, background continuity and storage state.
-5. **Media/OsmAnd:** USB mount/unmount/remount, audio routing, MediaStore visibility and real OsmAnd handoff/return.
-6. **CANBUS/OEM:** observe real available signals/functions before implementing adapters.
-7. **ACC/boot/wake:** measure actual behavior; do not add a generic receiver.
-8. **Recovery readiness:** prove Recovery path and create/verify Golden Backup/hash where possible.
-9. Only after step 8 may deeper OEM/startup/platform integration be evaluated.
+`docs/P11_PHYSICAL_COMMISSIONING_READINESS.md`
 
-Everything in steps 1–9 is currently **PENDING — PHYSICAL HEAD UNIT**.
+P11 is **ready to start only when the exact production head unit is physically available**. Until then, software changes must remain bounded to proven defects or explicitly approved standalone features; no hardware behavior may be invented.
+
+## Commissioning order
+1. read-only device baseline;
+2. bounded GDN APK smoke;
+3. display/touch acceptance;
+4. TPMS/ESP32 connectivity;
+5. GNSS/TripRuntime;
+6. Media/USB/OsmAnd;
+7. CANBUS/OEM discovery;
+8. ACC/boot/wake characterization;
+9. Recovery readiness;
+10. Golden Backup/hash where possible.
+
+All steps are currently **PENDING — PHYSICAL HEAD UNIT**.
 
 ## Explicitly not approved yet
 - firmware/MCU/kernel flashing;
-- destructive root changes;
-- boot replacement or OEM app removal;
+- destructive root/system changes;
+- boot replacement or OEM app removal/hiding;
 - generic BOOT_COMPLETED/ACC startup logic;
 - namespace/applicationId migration;
 - persisted-key renaming without a migration plan and regression coverage.
 
-## P11
-P11 is **not started**. Define it only when there is a concrete post-P10 objective or physical commissioning evidence that justifies a new software phase.
+Only after Recovery + Golden Backup readiness is proven may deeper OEM/startup/platform modification be proposed as a separate reviewed scope.
