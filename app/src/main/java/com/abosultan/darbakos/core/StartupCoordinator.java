@@ -6,11 +6,12 @@ import android.content.Intent;
 import android.os.Build;
 
 /**
- * Single boundary for Darbak runtime startup policy.
+ * Single boundary for GDN runtime startup policy.
  *
- * Portable P10 startup is deliberately limited to a visible user launch with precise location.
- * OEM ACC/boot integrations stay blocked until the exact production head unit is known and
- * validated; they must enter through this boundary rather than generic broadcast receivers.
+ * Portable startup is deliberately limited to a visible user launch with precise location and an
+ * active hardware profile that supports the GNSS flow. OEM ACC/boot integrations stay blocked
+ * until the exact production head unit is known and validated; they must enter through this
+ * boundary rather than generic broadcast receivers.
  */
 public final class StartupCoordinator {
     public enum Trigger {
@@ -27,7 +28,17 @@ public final class StartupCoordinator {
 
     public static boolean canStart(Trigger trigger, boolean activityVisible,
                                    boolean preciseLocationGranted) {
-        return isPortableTrigger(trigger)
+        DeviceCapabilityPolicy capabilities = new DeviceCapabilityPolicy(
+                HardwareProfileStore.get().current());
+        return canStart(trigger, activityVisible, preciseLocationGranted, capabilities);
+    }
+
+    static boolean canStart(Trigger trigger, boolean activityVisible,
+                            boolean preciseLocationGranted,
+                            DeviceCapabilityPolicy capabilities) {
+        return capabilities != null
+                && capabilities.developGnssFlow()
+                && isPortableTrigger(trigger)
                 && RuntimeStartPolicy.allowActivityStart(activityVisible, preciseLocationGranted);
     }
 
