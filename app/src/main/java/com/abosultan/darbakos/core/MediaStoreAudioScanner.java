@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Modern shared-audio discovery. VOLUME_EXTERNAL is a merged read view of attached external
- * MediaStore volumes on Android 10+, including removable media that the system has indexed.
+ * Modern shared-audio discovery. On Android 10+, the active HardwareProfile decides whether the
+ * scanner uses the merged external MediaStore view (primary + removable) or primary storage only.
  */
 public final class MediaStoreAudioScanner {
     private static final int MAX_TRACKS = 5000;
@@ -25,7 +25,9 @@ public final class MediaStoreAudioScanner {
     public List<LocalMediaTrack> scan(Context context) {
         if (context == null) return Collections.emptyList();
         ContentResolver resolver = context.getApplicationContext().getContentResolver();
-        Uri collection = collectionUri();
+        DeviceCapabilityPolicy capabilities = new DeviceCapabilityPolicy(
+                HardwareProfileStore.get().current());
+        Uri collection = collectionUri(Build.VERSION.SDK_INT, capabilities);
         String[] projection = {
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.DISPLAY_NAME,
@@ -67,13 +69,17 @@ public final class MediaStoreAudioScanner {
         return Collections.unmodifiableList(tracks);
     }
 
-    private static Uri collectionUri() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return mergedExternalUriApi29();
+    public static Uri collectionUri(int sdkInt, DeviceCapabilityPolicy capabilities) {
+        if (sdkInt >= Build.VERSION_CODES.Q) {
+            boolean removable = capabilities != null && capabilities.developRemovableMediaFlow();
+            return externalCollectionApi29(removable);
+        }
         return MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
     }
 
     @TargetApi(Build.VERSION_CODES.Q)
-    private static Uri mergedExternalUriApi29() {
-        return MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+    private static Uri externalCollectionApi29(boolean includeRemovable) {
+        return MediaStore.Audio.Media.getContentUri(
+                includeRemovable ? MediaStore.VOLUME_EXTERNAL : MediaStore.VOLUME_EXTERNAL_PRIMARY);
     }
 }
