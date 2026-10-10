@@ -61,7 +61,6 @@ public final class GdnApplication extends Application {
         int marker = base.indexOf(PROFILE_MARKER);
         if (marker >= 0) base = base.substring(0, marker);
         if (profile == null) return base;
-        boolean assumed = profile.physicalCommissioningRequired;
         return base + String.format(Locale.US,
                 "%s%s • %s • API%d • %dx%d • RAM %d/%d MB\n"
                         + "USB %s • GNSS %s • Audio %s\n"
@@ -79,8 +78,9 @@ public final class GdnApplication extends Application {
                 yesNo(profile.removableMedia),
                 yesNo(profile.gnss),
                 yesNo(profile.standardAudio),
-                assumed ? "ASSUMED — VERIFY ON HEAD UNIT" : "MEASURED",
-                assumed ? "PENDING" : "MEASURED");
+                profile.portableMeasurementsComplete
+                        ? "MEASURED" : "ASSUMED — VERIFY ON HEAD UNIT",
+                profile.physicalCommissioningRequired ? "PENDING" : "COMPLETE");
     }
 
     private static String yesNo(boolean value) { return value ? "YES" : "NO"; }
