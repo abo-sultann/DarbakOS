@@ -28,12 +28,36 @@ public final class HardwareProfileTest {
         assertTrue(profile.removableUsbExpected);
         assertTrue(profile.internalGnssExpected);
         assertTrue(profile.standardAndroidAudioExpected);
+        assertFalse(profile.portableMeasurementsComplete());
         assertTrue(profile.requiresPhysicalCommissioning());
         assertEquals(HardwareProfile.AccBehavior.UNKNOWN_OEM_SLEEP_WAKE, profile.accBehavior);
         assertEquals(HardwareProfile.CanBusBehavior.UNKNOWN_OPTIONAL, profile.canBusBehavior);
         assertEquals(HardwareProfile.RecoveryState.UNKNOWN, profile.recoveryState);
         assertFalse(profile.allowGenericBootReceiver());
         assertFalse(profile.allowDestructivePlatformChanges());
+    }
+
+    @Test public void measuredPortableProfileDoesNotCompletePhysicalCommissioning() {
+        HardwareProfile measured = HardwareProfile.measured(
+                "measured-head-unit",
+                37,
+                1920,
+                1080,
+                4096,
+                8192,
+                true,
+                true,
+                true);
+
+        assertEquals(HardwareProfile.Provenance.MEASURED, measured.provenance);
+        assertTrue(measured.portableMeasurementsComplete());
+        assertTrue(measured.requiresPhysicalCommissioning());
+        assertFalse(measured.allowGenericBootReceiver());
+        assertFalse(measured.allowDestructivePlatformChanges());
+
+        HardwareProfileDiagnostics diagnostics = HardwareProfileDiagnostics.from(measured);
+        assertTrue(diagnostics.portableMeasurementsComplete);
+        assertTrue(diagnostics.physicalCommissioningRequired);
     }
 
     @Test public void diagnosticsExposeOnlyCurrentPortableProfileFacts() {
@@ -49,6 +73,7 @@ public final class HardwareProfileTest {
         assertTrue(diagnostics.removableMedia);
         assertTrue(diagnostics.gnss);
         assertTrue(diagnostics.standardAudio);
+        assertFalse(diagnostics.portableMeasurementsComplete);
         assertTrue(diagnostics.physicalCommissioningRequired);
     }
 }
