@@ -17,6 +17,7 @@ public final class HardwareProfileDiagnostics {
     public final boolean removableMedia;
     public final boolean gnss;
     public final boolean standardAudio;
+    public final boolean portableMeasurementsComplete;
     public final boolean physicalCommissioningRequired;
 
     private HardwareProfileDiagnostics(HardwareProfile profile,
@@ -31,6 +32,7 @@ public final class HardwareProfileDiagnostics {
         removableMedia = capabilities.developRemovableMediaFlow();
         gnss = capabilities.developGnssFlow();
         standardAudio = capabilities.developStandardAudioFlow();
+        portableMeasurementsComplete = profile.portableMeasurementsComplete();
         physicalCommissioningRequired = capabilities.requiresPhysicalCommissioning();
     }
 
