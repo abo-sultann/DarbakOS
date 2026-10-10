@@ -33,9 +33,9 @@ public final class StartupCoordinator {
         return canStart(trigger, activityVisible, preciseLocationGranted, capabilities);
     }
 
-    static boolean canStart(Trigger trigger, boolean activityVisible,
-                            boolean preciseLocationGranted,
-                            DeviceCapabilityPolicy capabilities) {
+    public static boolean canStart(Trigger trigger, boolean activityVisible,
+                                   boolean preciseLocationGranted,
+                                   DeviceCapabilityPolicy capabilities) {
         return capabilities != null
                 && capabilities.developGnssFlow()
                 && isPortableTrigger(trigger)
