@@ -8,24 +8,32 @@ import android.widget.TextView;
 
 import com.abosultan.darbakos.core.HardwareProfileDiagnostics;
 
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /** Read-only binder for the active head-unit profile on the technical Admin surface. */
 public final class GdnApplication extends Application {
     private static final String PROFILE_MARKER = "\nProfile ";
+    private static final Map<Activity, View> BOUND_PANELS =
+            Collections.synchronizedMap(new WeakHashMap<>());
 
     @Override public void onCreate() {
         super.onCreate();
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
-            @Override public void onActivityCreated(Activity activity, Bundle state) {
+            @Override public void onActivityCreated(Activity activity, Bundle state) { }
+            @Override public void onActivityStarted(Activity activity) { bindAdminProfile(activity); }
+            @Override public void onActivityResumed(Activity activity) {
                 bindAdminProfile(activity);
+                renderIfVisible(activity);
             }
-            @Override public void onActivityResumed(Activity activity) { renderIfVisible(activity); }
-            @Override public void onActivityStarted(Activity activity) { }
             @Override public void onActivityPaused(Activity activity) { }
             @Override public void onActivityStopped(Activity activity) { }
             @Override public void onActivitySaveInstanceState(Activity activity, Bundle state) { }
-            @Override public void onActivityDestroyed(Activity activity) { }
+            @Override public void onActivityDestroyed(Activity activity) {
+                BOUND_PANELS.remove(activity);
+            }
         });
     }
 
@@ -33,6 +41,8 @@ public final class GdnApplication extends Application {
         if (activity == null) return;
         View panel = activity.findViewById(R.id.admin_panel);
         if (panel == null) return;
+        if (BOUND_PANELS.get(activity) == panel) return;
+        BOUND_PANELS.put(activity, panel);
         panel.addOnLayoutChangeListener((view, left, top, right, bottom,
                                          oldLeft, oldTop, oldRight, oldBottom) ->
                 renderIfVisible(activity));
