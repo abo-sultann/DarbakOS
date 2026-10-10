@@ -29,6 +29,8 @@ public final class AdminHardwareProfileTest {
                 assertTrue(text.contains("USB YES"));
                 assertTrue(text.contains("GNSS YES"));
                 assertTrue(text.contains("Audio YES"));
+                assertTrue(text.contains("Portable hardware: ASSUMED — VERIFY ON HEAD UNIT"));
+                assertTrue(text.contains("ACC/CANBUS/Boot/Recovery: PHYSICAL-LOCKED"));
                 assertTrue(text.contains("Physical PENDING"));
             });
         }
