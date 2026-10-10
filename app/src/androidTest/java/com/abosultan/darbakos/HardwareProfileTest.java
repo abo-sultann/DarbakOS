@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.abosultan.darbakos.core.CommissioningState;
 import com.abosultan.darbakos.core.HardwareProfile;
 import com.abosultan.darbakos.core.HardwareProfileDiagnostics;
 
@@ -58,6 +59,21 @@ public final class HardwareProfileTest {
         HardwareProfileDiagnostics diagnostics = HardwareProfileDiagnostics.from(measured);
         assertTrue(diagnostics.portableMeasurementsComplete);
         assertTrue(diagnostics.physicalCommissioningRequired);
+
+        CommissioningState commissioning = CommissioningState.from(measured);
+        assertEquals(CommissioningState.PortableState.MEASURED, commissioning.portable);
+        assertEquals(CommissioningState.PhysicalState.PENDING, commissioning.physical);
+        assertTrue(commissioning.portableMeasurementsComplete());
+        assertFalse(commissioning.physicalCommissioningComplete());
+    }
+
+    @Test public void defaultCommissioningStateRemainsAssumedAndPhysicalPending() {
+        CommissioningState commissioning = CommissioningState.from(HardwareProfile.DEFAULT);
+
+        assertEquals(CommissioningState.PortableState.ASSUMED, commissioning.portable);
+        assertEquals(CommissioningState.PhysicalState.PENDING, commissioning.physical);
+        assertFalse(commissioning.portableMeasurementsComplete());
+        assertFalse(commissioning.physicalCommissioningComplete());
     }
 
     @Test public void diagnosticsExposeOnlyCurrentPortableProfileFacts() {
