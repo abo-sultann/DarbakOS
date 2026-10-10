@@ -33,7 +33,8 @@ public final class HardwareProfileStoreTest {
         assertTrue(store.replaceWithMeasured(measured));
         assertEquals(HardwareProfile.Provenance.MEASURED, store.current().provenance);
         assertEquals(2000, store.current().assumedDisplayWidthPx);
-        assertFalse(store.current().requiresPhysicalCommissioning());
+        assertTrue(store.current().portableMeasurementsComplete());
+        assertTrue(store.current().requiresPhysicalCommissioning());
 
         DeviceCapabilityPolicy policy = new DeviceCapabilityPolicy(store.current());
         assertTrue(policy.developRemovableMediaFlow());
