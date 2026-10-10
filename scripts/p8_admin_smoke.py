@@ -11,5 +11,5 @@ assert subprocess.check_output(ADB+['shell','getprop','ro.build.version.sdk'],te
 selected='com.abosultan.darbakos.ShellTest#hiddenAdminIsReadOnlyAndRecoveryStaysLocked,com.abosultan.darbakos.AdminHardwareProfileTest'
 out=subprocess.check_output(ADB+['shell','am','instrument','-w','-e','class',selected,PACKAGE+'.test/androidx.test.runner.AndroidJUnitRunner'],text=True,timeout=180)
 (OUT/'p8-admin-instrumentation.txt').write_text(out)
-assert 'OK (2 tests)' in out and 'FAILURES' not in out,out
-print('PASS: P8 hidden read-only Admin diagnostics + active hardware profile; 2 focused tests')
+assert 'OK (3 tests)' in out and 'FAILURES' not in out,out
+print('PASS: P8 hidden read-only Admin diagnostics + active hardware profile; 3 focused tests')
