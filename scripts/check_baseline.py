@@ -88,6 +88,8 @@ assert 'BOOT_COMPLETED' not in java, 'Portable P10 must not assume generic boot 
 runtime = main / 'java/com/abosultan/darbakos/core/TripRuntimeService.java'
 media_library = main / 'java/com/abosultan/darbakos/core/LocalMediaLibrary.java'
 main_activity = main / 'java/com/abosultan/darbakos/MainActivity.java'
+hardware_profile = main / 'java/com/abosultan/darbakos/core/HardwareProfile.java'
+capability_policy = main / 'java/com/abosultan/darbakos/core/DeviceCapabilityPolicy.java'
 runtime_text = runtime.read_text()
 main_text = main_activity.read_text()
 assert runtime_text.count('new HandlerThread(') == 1
@@ -104,10 +106,24 @@ assert 'LocationPermissionPolicy.requestPermissions()' in main_text
 assert 'StartupCoordinator.startPortableRuntime(' in main_text
 assert 'MediaPermissionPolicy.requiredPermission(' in main_text
 
+profile_text = hardware_profile.read_text()
+policy_text = capability_policy.read_text()
+assert 'Provenance.ASSUMED' in profile_text, 'Default head-unit profile must remain explicitly assumed'
+assert re.search(r'\b1920\s*,\s*\n\s*1080\b', profile_text), \
+    'Default modern display assumption must remain 1920x1080 until physical commissioning'
+assert re.search(r'\b4096\s*,\s*\n\s*8192\b', profile_text), \
+    'Default RAM planning assumption must remain 4GB minimum / 8GB preferred'
+assert 'allowGenericBootReceiver()' in profile_text and 'return false;' in profile_text, \
+    'Assumed hardware must never enable generic boot integration'
+assert 'allowOemAccAdapter()' in policy_text and 'allowCanBusAdapter()' in policy_text, \
+    'OEM ACC/CANBUS decisions must remain centralized behind the capability policy'
+assert policy_text.count('return false;') >= 2, \
+    'Assumed capability policy must keep OEM-specific adapters disabled'
+
 for path in main.rglob('*.java'):
     source = path.read_text()
     assert not re.search(r'new\s+(?:Thread|Timer)\s*\(|ExecutorService|Executors\.', source), path
     if path not in (runtime, media_library):
         assert not re.search(r'new\s+(?:HandlerThread|Handler)\s*\(', source), path
 
-print('PASS: API25 legacy floor + API37 modern target, precise-location policy, MediaStore audio, package visibility, stale-GPS expiry, storage failover, scoped back-navigation migration, no generic boot receiver')
+print('PASS: API25 legacy floor + API37 modern target, precise-location policy, MediaStore audio, package visibility, stale-GPS expiry, storage failover, safe assumed hardware profile, scoped back-navigation migration, no generic boot receiver')
