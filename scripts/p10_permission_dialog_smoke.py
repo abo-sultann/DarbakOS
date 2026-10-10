@@ -187,6 +187,10 @@ def trip_runtime_running():
     return "TripRuntimeService" in out
 
 
+# The emulator's one-time immersive-mode teaching overlay can cover the real permission dialog.
+# Mark only that SystemUI tutorial as confirmed; location permissions still go through real UI.
+adb("shell", "settings", "put", "secure", "immersive_mode_confirmations", "confirmed", check=False)
+
 # Clean install #1: user deliberately grants Approximate only.
 clean_install()
 choose_location(False)
