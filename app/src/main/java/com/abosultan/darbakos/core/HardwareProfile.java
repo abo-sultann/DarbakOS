@@ -74,16 +74,50 @@ public final class HardwareProfile {
         this.recoveryState = recoveryState;
     }
 
+    /**
+     * Creates the bounded profile that will replace DEFAULT after P11 measures the real unit.
+     * Measurement does not imply approval for ACC/CANBUS/recovery or destructive platform work.
+     */
+    public static HardwareProfile measured(String id,
+                                           int productionApi,
+                                           int displayWidthPx,
+                                           int displayHeightPx,
+                                           int minimumRamMb,
+                                           int preferredRamMb,
+                                           boolean removableUsbExpected,
+                                           boolean internalGnssExpected,
+                                           boolean standardAndroidAudioExpected) {
+        if (id == null || id.trim().isEmpty()) throw new IllegalArgumentException("id");
+        if (productionApi < 25) throw new IllegalArgumentException("productionApi");
+        if (displayWidthPx <= 0 || displayHeightPx <= 0) throw new IllegalArgumentException("display");
+        if (minimumRamMb <= 0 || preferredRamMb < minimumRamMb) throw new IllegalArgumentException("ram");
+        return new HardwareProfile(
+                id.trim(),
+                Provenance.MEASURED,
+                productionApi,
+                25,
+                displayWidthPx,
+                displayHeightPx,
+                minimumRamMb,
+                preferredRamMb,
+                removableUsbExpected,
+                internalGnssExpected,
+                standardAndroidAudioExpected,
+                AccBehavior.UNKNOWN_OEM_SLEEP_WAKE,
+                CanBusBehavior.UNKNOWN_OPTIONAL,
+                RecoveryState.UNKNOWN);
+    }
+
     public boolean isLandscape() {
         return assumedDisplayWidthPx > assumedDisplayHeightPx;
     }
 
-    /** Unsafe platform behavior never becomes enabled by an assumed profile. */
+    /** Unsafe platform behavior never becomes enabled by an assumed or merely measured profile. */
     public boolean allowGenericBootReceiver() {
         return false;
     }
 
-    /** Destructive platform work requires measured recovery/backup evidence, never defaults. */
+    /** Destructive platform work requires separately proven recovery/backup evidence. */
     public boolean allowDestructivePlatformChanges() {
         return false;
     }
