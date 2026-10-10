@@ -1,6 +1,6 @@
-# 02_NEXT_TASK — P11 Physical Commissioning Readiness
+# 02_NEXT_TASK — Continue Build on Replaceable Hardware Defaults
 
-P10 software modernization is **closed and merged to `main`**. Do **not** reopen broad Android-modern compatibility, identity cleanup or UI-foundation work unless a concrete regression appears.
+P10 software modernization is **closed and merged to `main`**. P11 physical commissioning remains prepared, but development does **not** stop while waiting for the production head unit.
 
 ## Verified baseline
 - P10 reviewed branch head: `855731e4ce23c5cdea117c552ac449703921a8f0`.
@@ -11,33 +11,63 @@ P10 software modernization is **closed and merged to `main`**. Do **not** reopen
 - API25 Legacy Regression Floor: PASS.
 - Product identity: **غضن | GDN**.
 
-## Current next gate
-The next approved gate is now documented in:
+## Development policy before the new screen arrives
+Continue building GDN using the replaceable default profile in:
+
+`app/src/main/java/com/abosultan/darbakos/core/HardwareProfile.java`
+
+Current assumed development profile:
+- Android production target: API37;
+- legacy regression floor: API25;
+- landscape development display: 1920×1080;
+- assumed minimum RAM class: 4 GB;
+- preferred RAM class: 8 GB;
+- removable USB expected;
+- internal GNSS expected;
+- standard Android audio path expected.
+
+These are **development assumptions, not measured hardware facts**. They are intentionally centralized so the production profile can replace them after P11 measurements without rebuilding unrelated GDN logic.
+
+## Unknowns that must stay behind adapters
+Do not hard-code guessed behavior for:
+- ACC/sleep/wake;
+- CANBUS/OEM interfaces;
+- boot/autostart semantics;
+- MCU/vendor services;
+- recovery/partition behavior;
+- exact audio routing;
+- exact USB topology;
+- exact display density/brightness/thermal characteristics.
+
+The default profile must never authorize a generic BOOT_COMPLETED receiver or destructive platform changes.
+
+## Continue now
+Software work may continue on:
+1. core architecture and state;
+2. modern UI and responsive layouts;
+3. Media/MediaStore/audio-focus logic;
+4. GNSS/Trip logic and simulated/fake-source tests;
+5. TPMS/ESP32 integration contracts;
+6. Vehicle data foundation;
+7. OsmAnd integration;
+8. Apps/Settings/Admin surfaces;
+9. diagnostics, observability and commissioning tools;
+10. automated tests and failure simulation.
+
+## Physical commissioning
+The physical checklist remains in:
 
 `docs/P11_PHYSICAL_COMMISSIONING_READINESS.md`
 
-P11 is **ready to start only when the exact production head unit is physically available**. Until then, software changes must remain bounded to proven defects or explicitly approved standalone features; no hardware behavior may be invented.
+When the unit arrives, use the measured data to replace/default-tune the profile and implement only the hardware-specific adapters justified by evidence.
 
-## Commissioning order
-1. read-only device baseline;
-2. bounded GDN APK smoke;
-3. display/touch acceptance;
-4. TPMS/ESP32 connectivity;
-5. GNSS/TripRuntime;
-6. Media/USB/OsmAnd;
-7. CANBUS/OEM discovery;
-8. ACC/boot/wake characterization;
-9. Recovery readiness;
-10. Golden Backup/hash where possible.
+Physical acceptance remains **PENDING — PHYSICAL HEAD UNIT**.
 
-All steps are currently **PENDING — PHYSICAL HEAD UNIT**.
-
-## Explicitly not approved yet
-- firmware/MCU/kernel flashing;
-- destructive root/system changes;
-- boot replacement or OEM app removal/hiding;
-- generic BOOT_COMPLETED/ACC startup logic;
-- namespace/applicationId migration;
-- persisted-key renaming without a migration plan and regression coverage.
-
-Only after Recovery + Golden Backup readiness is proven may deeper OEM/startup/platform modification be proposed as a separate reviewed scope.
+## Safety boundary
+Until Recovery + Golden Backup readiness is proven:
+- no firmware/MCU/kernel flashing;
+- no destructive root/system changes;
+- no boot replacement or OEM app removal/hiding;
+- no generic BOOT_COMPLETED/ACC startup logic;
+- no namespace/applicationId migration;
+- no persisted-key renaming without a migration plan and regression coverage.
