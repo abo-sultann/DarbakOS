@@ -75,8 +75,9 @@ public final class HardwareProfile {
     }
 
     /**
-     * Creates the bounded profile that will replace DEFAULT after P11 measures the real unit.
-     * Measurement does not imply approval for ACC/CANBUS/recovery or destructive platform work.
+     * Creates the bounded portable profile that will replace DEFAULT after P11 measures the real
+     * unit. Measurement does not imply approval for ACC/CANBUS/recovery or completion of physical
+     * commissioning.
      */
     public static HardwareProfile measured(String id,
                                            int productionApi,
@@ -112,6 +113,10 @@ public final class HardwareProfile {
         return assumedDisplayWidthPx > assumedDisplayHeightPx;
     }
 
+    public boolean portableMeasurementsComplete() {
+        return provenance == Provenance.MEASURED;
+    }
+
     /** Unsafe platform behavior never becomes enabled by an assumed or merely measured profile. */
     public boolean allowGenericBootReceiver() {
         return false;
@@ -122,7 +127,11 @@ public final class HardwareProfile {
         return false;
     }
 
+    /**
+     * Portable measurements are only one part of commissioning. ACC/sleep/wake, CANBUS and
+     * recovery remain physical gates, so merely switching to a MEASURED profile cannot close P11.
+     */
     public boolean requiresPhysicalCommissioning() {
-        return provenance != Provenance.MEASURED;
+        return true;
     }
 }
