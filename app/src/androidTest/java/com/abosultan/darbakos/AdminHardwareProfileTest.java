@@ -8,6 +8,9 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.abosultan.darbakos.core.HardwareProfile;
+import com.abosultan.darbakos.core.HardwareProfileDiagnostics;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,5 +37,27 @@ public final class AdminHardwareProfileTest {
                 assertTrue(text.contains("Physical PENDING"));
             });
         }
+    }
+
+    @Test public void measuredPortableProfileStillShowsPhysicalPending() {
+        HardwareProfile measured = HardwareProfile.measured(
+                "measured-head-unit",
+                37,
+                1920,
+                1080,
+                4096,
+                8192,
+                true,
+                true,
+                true);
+        String text = GdnApplication.withProfile(
+                "Android 17 • API37",
+                HardwareProfileDiagnostics.from(measured));
+
+        assertTrue(text.contains("Profile measured-head-unit"));
+        assertTrue(text.contains("MEASURED"));
+        assertTrue(text.contains("Portable hardware: MEASURED"));
+        assertTrue(text.contains("ACC/CANBUS/Boot/Recovery: PHYSICAL-LOCKED"));
+        assertTrue(text.contains("Physical PENDING"));
     }
 }
