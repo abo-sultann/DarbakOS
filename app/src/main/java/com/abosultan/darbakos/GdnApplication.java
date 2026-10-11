@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
+import com.abosultan.darbakos.core.CommissioningState;
 import com.abosultan.darbakos.core.HardwareProfileDiagnostics;
 
 import java.util.Collections;
@@ -53,14 +54,19 @@ public final class GdnApplication extends Application {
         View panel = activity.findViewById(R.id.admin_panel);
         TextView device = activity.findViewById(R.id.admin_device);
         if (panel == null || device == null || panel.getVisibility() != View.VISIBLE) return;
-        device.setText(withProfile(device.getText(), HardwareProfileDiagnostics.current()));
+        device.setText(withProfile(
+                device.getText(),
+                HardwareProfileDiagnostics.current(),
+                CommissioningState.current()));
     }
 
-    static String withProfile(CharSequence deviceText, HardwareProfileDiagnostics profile) {
+    static String withProfile(CharSequence deviceText,
+                              HardwareProfileDiagnostics profile,
+                              CommissioningState commissioning) {
         String base = deviceText == null ? "" : deviceText.toString();
         int marker = base.indexOf(PROFILE_MARKER);
         if (marker >= 0) base = base.substring(0, marker);
-        if (profile == null) return base;
+        if (profile == null || commissioning == null) return base;
         return base + String.format(Locale.US,
                 "%s%s • %s • API%d • %dx%d • RAM %d/%d MB\n"
                         + "USB %s • GNSS %s • Audio %s\n"
@@ -78,9 +84,9 @@ public final class GdnApplication extends Application {
                 yesNo(profile.removableMedia),
                 yesNo(profile.gnss),
                 yesNo(profile.standardAudio),
-                profile.portableMeasurementsComplete
+                commissioning.portable == CommissioningState.PortableState.MEASURED
                         ? "MEASURED" : "ASSUMED — VERIFY ON HEAD UNIT",
-                profile.physicalCommissioningRequired ? "PENDING" : "COMPLETE");
+                commissioning.physical.name());
     }
 
     private static String yesNo(boolean value) { return value ? "YES" : "NO"; }
