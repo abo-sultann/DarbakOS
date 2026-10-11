@@ -8,6 +8,7 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.abosultan.darbakos.core.CommissioningState;
 import com.abosultan.darbakos.core.HardwareProfile;
 import com.abosultan.darbakos.core.HardwareProfileDiagnostics;
 
@@ -52,7 +53,8 @@ public final class AdminHardwareProfileTest {
                 true);
         String text = GdnApplication.withProfile(
                 "Android 17 • API37",
-                HardwareProfileDiagnostics.from(measured));
+                HardwareProfileDiagnostics.from(measured),
+                CommissioningState.from(measured));
 
         assertTrue(text.contains("Profile measured-head-unit"));
         assertTrue(text.contains("MEASURED"));
