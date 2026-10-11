@@ -34,6 +34,20 @@ public final class ModernHeadUnitTest {
         }
     }
 
+    @Test public void mediaCopyDoesNotClaimUnverifiedRemovableHardware() {
+        String source = InstrumentationRegistry.getInstrumentation().getTargetContext()
+                .getString(R.string.media_local_source);
+        String notScanned = InstrumentationRegistry.getInstrumentation().getTargetContext()
+                .getString(R.string.media_local_not_scanned);
+
+        assertEquals("مكتبة الوسائط المشتركة", source);
+        assertTrue(notScanned.contains("مكتبة الوسائط المشتركة"));
+        assertFalse(source.contains("USB"));
+        assertFalse(source.contains("SD"));
+        assertFalse(notScanned.contains("USB"));
+        assertFalse(notScanned.contains("SD"));
+    }
+
     private static void assertWithin(View v, Rect bounds) {
         int[] p=new int[2]; v.getLocationOnScreen(p);
         assertTrue(p[0] >= bounds.left && p[1] >= bounds.top);
