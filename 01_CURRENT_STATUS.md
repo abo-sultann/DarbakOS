@@ -1,6 +1,6 @@
 # غضن | GDN — Current Status
 
-**Updated:** 2026-10-10  
+**Updated:** 2026-10-11  
 **Authority:** GitHub repository state and verified CI evidence.
 
 ## Phase state
@@ -16,6 +16,14 @@
   - Commissioning gate: [`docs/P11_PHYSICAL_COMMISSIONING_READINESS.md`](docs/P11_PHYSICAL_COMMISSIONING_READINESS.md).
   - No physical item may be marked PASS before measurement on the exact production unit.
   - Current state for all hardware gates: **PENDING — PHYSICAL HEAD UNIT**.
+- **P12:** **SOFTWARE HARDWARE-READINESS IN PROGRESS / CURRENT GATES GREEN**.
+  - Replaceable `HardwareProfile` defaults are active for development only.
+  - `HardwareProfileStore`, capability policy, startup gating, MediaStore scope and technical diagnostics are integrated.
+  - Portable measurements are explicitly separated from full physical commissioning.
+  - `CommissioningState` is the authoritative status source for Admin readiness display.
+  - ACC / CANBUS / Boot-Wake / Recovery remain **PHYSICAL-LOCKED**.
+  - User-visible local-media copy no longer claims USB or SD before physical verification.
+  - Latest verified modern commissioning-lock gate: commit `a4f2a4edc4556de858fc05ddab5bf1878ddbf5bc`, CI run `38161177038` / #416 — **SUCCESS**.
 
 ## Product identity
 The current product identity is **غضن | GDN**. `DarbakOS` may remain in repository/package/class/preferences/artifact identifiers only where changing it creates migration, persistence, Android-component or external-consumer risk. These retained identifiers are technical compatibility debt, not current branding.
@@ -27,25 +35,25 @@ Bounded identity audit: [`docs/GDN_IDENTITY_AUDIT.md`](docs/GDN_IDENTITY_AUDIT.m
 - Build: `compileSdk 37`, `targetSdk 37`, `minSdk 25`.
 - Android 7.1 / API25: **Legacy Regression Floor only**.
 - Retired Allwinner T3 / 1024×600 / ~1 GB hardware must not constrain the modern product.
+- Current development hardware defaults are **ASSUMED**, centralized and replaceable; they are not measured production facts.
 - Exact production SoC/RAM/display/OEM/CANBUS/ACC profile remains intentionally unknown until the replacement head unit is physically inspected.
 
-## P10 final verified gate
-Final reviewed branch head before merge: `855731e4ce23c5cdea117c552ac449703921a8f0`  
-Pre-merge CI: run `37993383810` / #373 — **SUCCESS**  
-Merge commit on `main`: `1e2cc0185653ea9dcacabb51d9128857f143befa`  
-Post-merge CI: run `38000534974` / #374 — **SUCCESS**.
-
+## Current verified software baseline
 Verified coverage includes:
 - API37 Build + Lint and Android 17 emulator;
 - API25 Legacy Regression Floor;
 - clean-install location permission flow and Precise/Approximate/Denied/revoked policy;
 - `READ_MEDIA_AUDIO`, MediaStore and Content URI playback contracts;
 - stale MediaStore URI invalidation;
+- profile-aware removable-media scanning without treating assumed USB support as physical proof;
 - OsmAnd visibility/present/missing integration fixture;
 - RuntimeStartPolicy + StartupCoordinator with no generic BootReceiver/ACC assumption;
 - GPS foreground runtime and stale-position expiry;
 - trip-storage write failure/internal fallback/status reporting;
 - modern head-unit layout/navigation gate;
+- hardware-profile diagnostics and commissioning-state display;
+- regression tests that keep `Physical PENDING` until real commissioning;
+- modern UI copy that avoids claiming unverified USB/SD hardware;
 - bounded GDN identity cleanup without namespace/persistence migration;
 - existing portable regression coverage retained.
 
