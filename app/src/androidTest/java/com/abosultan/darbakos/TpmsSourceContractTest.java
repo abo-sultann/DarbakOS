@@ -1,6 +1,7 @@
 package com.abosultan.darbakos;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.abosultan.darbakos.core.TpmsAlertPolicy;
 import com.abosultan.darbakos.core.TpmsDataStore;
 import com.abosultan.darbakos.core.TpmsDisplayModel;
 import com.abosultan.darbakos.core.TpmsSourceAdapter;
@@ -183,6 +184,58 @@ public final class TpmsSourceContractTest {
         assertFalse(model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).live());
         assertEquals(30.0,
                 model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).pressurePsi, 0.001);
+    }
+
+    @Test public void roadLowPressureRaisesWarning() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 24.0, 990L)),
+                1000L, 500L, 25.0);
+        TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
+        assertEquals(TpmsAlertPolicy.Severity.WARNING, result.severity);
+        assertTrue(result.roadWarning());
+        assertEquals(TpmsAlertPolicy.Severity.WARNING,
+                result.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).severity);
+        assertFalse(result.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).visualOnly);
+    }
+
+    @Test public void spareLowPressureIsVisualOnlyAndNeverRoadWarning() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 22.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 32.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 32.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 32.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 32.0, 990L)),
+                1000L, 500L, 25.0);
+        TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
+        assertEquals(TpmsAlertPolicy.Severity.INFO, result.severity);
+        assertFalse(result.roadWarning());
+        assertTrue(result.spareVisualNotice());
+        assertTrue(result.wheel(TpmsSourceSnapshot.Wheel.SPARE).visualOnly);
+    }
+
+    @Test public void staleOrMissingDataIsInformationalNotPressureEmergency() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 31.0, 100L)),
+                1000L, 500L, 25.0);
+        TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
+        assertEquals(TpmsAlertPolicy.Severity.INFO, result.severity);
+        assertFalse(result.roadWarning());
+        assertEquals(TpmsAlertPolicy.Severity.INFO,
+                result.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).severity);
+    }
+
+    @Test public void healthyFiveWheelSnapshotHasNoAlert() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 32.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 32.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 32.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 32.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 35.0, 990L)),
+                1000L, 500L, 25.0);
+        TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
+        assertEquals(TpmsAlertPolicy.Severity.NONE, result.severity);
+        assertFalse(result.roadWarning());
+        assertFalse(result.spareVisualNotice());
     }
 
     private static TpmsSourceSnapshot.Reading reading(TpmsSourceSnapshot.Wheel wheel,
