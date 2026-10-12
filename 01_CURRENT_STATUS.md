@@ -1,6 +1,6 @@
 # غضن | GDN — Current Status
 
-**Updated:** 2026-10-11  
+**Updated:** 2026-10-12  
 **Authority:** GitHub repository state and verified CI evidence.
 
 ## Phase state
@@ -21,9 +21,10 @@
   - `HardwareProfileStore`, capability policy, startup gating, MediaStore scope and technical diagnostics are integrated.
   - Portable measurements are explicitly separated from full physical commissioning.
   - `CommissioningState` is the authoritative status source for Admin readiness display.
+  - `CommissioningStateTest` now protects the ASSUMED/MEASURED versus Physical PENDING invariant inside the API37 review gate.
   - ACC / CANBUS / Boot-Wake / Recovery remain **PHYSICAL-LOCKED**.
   - User-visible local-media copy no longer claims USB or SD before physical verification.
-  - Latest verified modern commissioning-lock gate: commit `a4f2a4edc4556de858fc05ddab5bf1878ddbf5bc`, CI run `38161177038` / #416 — **SUCCESS**.
+  - Latest verified commissioning invariant gate: commit `8e95e331baf646ad1fc9e532be09d65d17cdfda7`, CI run `38167526932` / #418 — **SUCCESS**.
 
 ## Product identity
 The current product identity is **غضن | GDN**. `DarbakOS` may remain in repository/package/class/preferences/artifact identifiers only where changing it creates migration, persistence, Android-component or external-consumer risk. These retained identifiers are technical compatibility debt, not current branding.
@@ -53,6 +54,7 @@ Verified coverage includes:
 - modern head-unit layout/navigation gate;
 - hardware-profile diagnostics and commissioning-state display;
 - regression tests that keep `Physical PENDING` until real commissioning;
+- dedicated commissioning-state invariant coverage in the API37 gate;
 - modern UI copy that avoids claiming unverified USB/SD hardware;
 - bounded GDN identity cleanup without namespace/persistence migration;
 - existing portable regression coverage retained.
