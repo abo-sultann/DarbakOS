@@ -2,7 +2,7 @@ package com.abosultan.darbakos;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.abosultan.darbakos.core.TpmsDataStore;
-import com.abosultan.darbakos.core.TpmsRuntime;
+import com.abosultan.darbakos.core.TpmsDisplayModel;
 import com.abosultan.darbakos.core.TpmsSourceAdapter;
 import com.abosultan.darbakos.core.TpmsSourceSnapshot;
 import org.junit.Test;
@@ -137,47 +137,52 @@ public final class TpmsSourceContractTest {
         assertNull(merged.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT));
     }
 
-    @Test public void runtimeExposesFiveWheelSnapshotWithoutCollapsingSpare() {
-        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
-        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.connected(
-                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 34.0, 900L),
-                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 35.0, 910L),
-                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 33.0, 920L),
-                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 32.0, 930L),
-                reading(TpmsSourceSnapshot.Wheel.SPARE, "sp", 36.0, 940L))));
-        TpmsSourceSnapshot snapshot = runtime.snapshot();
-        assertEquals(5, snapshot.readings().size());
-        assertEquals(36.0, snapshot.reading(TpmsSourceSnapshot.Wheel.SPARE).pressurePsi, 0.001);
-        assertEquals(TpmsSourceSnapshot.State.LIVE, runtime.state(1000L, 500L));
+    @Test public void displayModelAlwaysExposesFiveIndependentWheelPositions() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 32.0, 990L)),
+                1000L, 500L, 25.0);
+        assertEquals(5, model.wheels().size());
+        assertEquals(TpmsDisplayModel.WheelState.LIVE,
+                model.wheel(TpmsSourceSnapshot.Wheel.FRONT_LEFT).state);
+        assertEquals(TpmsDisplayModel.WheelState.NO_DATA,
+                model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).state);
+        assertTrue(model.wheel(TpmsSourceSnapshot.Wheel.SPARE).spare());
     }
 
-    @Test public void runtimeLiveReadingRejectsStaleAndFutureSamples() {
-        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
-        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.connected(
-                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "stale", 30.0, 100L),
-                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "future", 31.0, 1100L))));
-        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, 1000L, 500L));
-        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, 1000L, 500L));
-        assertNotNull(runtime.snapshot().reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT));
+    @Test public void displayModelMarksLowPressureWithoutCollapsingSpareIntoRoadTires() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 24.5, 990L),
+                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 23.0, 995L)),
+                1000L, 500L, 25.0);
+        assertEquals(TpmsDisplayModel.WheelState.LOW,
+                model.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).state);
+        assertEquals(TpmsDisplayModel.WheelState.LOW,
+                model.wheel(TpmsSourceSnapshot.Wheel.SPARE).state);
+        assertFalse(model.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).spare());
+        assertTrue(model.wheel(TpmsSourceSnapshot.Wheel.SPARE).spare());
     }
 
-    @Test public void runtimeLiveReadingRejectsFaultedLastKnownEvidence() {
-        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
-        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.error(
-                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "last", 29.0, 990L))));
-        assertEquals(TpmsSourceSnapshot.State.ERROR, runtime.state(1000L, 500L));
-        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.REAR_LEFT, 1000L, 500L));
-        assertNotNull(runtime.snapshot().reading(TpmsSourceSnapshot.Wheel.REAR_LEFT));
+    @Test public void displayModelNeverLabelsStaleEvidenceLive() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 33.0, 100L)),
+                1000L, 500L, 25.0);
+        assertEquals(TpmsDisplayModel.WheelState.STALE,
+                model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).state);
+        assertFalse(model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).live());
+        assertEquals(33.0,
+                model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).pressurePsi, 0.001);
     }
 
-    @Test public void runtimeUnregisterReturnsToDisconnected() {
-        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
-        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.connected(
-                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 33.0, 990L))));
-        assertNotNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, 1000L, 500L));
-        runtime.unregisterSource("tpms");
-        assertEquals(TpmsSourceSnapshot.State.DISCONNECTED, runtime.state(1000L, 500L));
-        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, 1000L, 500L));
+    @Test public void displayModelKeepsFaultEvidenceExplicitlyUnavailable() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.error(
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "last", 30.0, 990L)),
+                1000L, 500L, 25.0);
+        assertEquals(TpmsSourceSnapshot.State.ERROR, model.sourceState);
+        assertEquals(TpmsDisplayModel.WheelState.SOURCE_UNAVAILABLE,
+                model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).state);
+        assertFalse(model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).live());
+        assertEquals(30.0,
+                model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).pressurePsi, 0.001);
     }
 
     private static TpmsSourceSnapshot.Reading reading(TpmsSourceSnapshot.Wheel wheel,
