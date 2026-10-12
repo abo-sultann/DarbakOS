@@ -127,7 +127,8 @@ public final class TpmsSourceContractTest {
 
     @Test public void connectedNoDataRemainsExplicitEvenWithAnotherFaultedSource() {
         TpmsDataStore store = new TpmsDataStore();
-        store.register(adapter("connected", TpmsSourceSnapshot.connected()));
+        store.register(adapter("connected", TpmsSourceSnapshot.connected(
+                new TpmsSourceSnapshot.Reading[0])));
         store.register(adapter("fault", TpmsSourceSnapshot.error(
                 reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "old", 29.0, 990L))));
         TpmsSourceSnapshot merged = store.snapshot();
