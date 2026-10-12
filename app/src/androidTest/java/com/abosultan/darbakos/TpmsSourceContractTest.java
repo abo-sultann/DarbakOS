@@ -1,6 +1,7 @@
 package com.abosultan.darbakos;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.abosultan.darbakos.core.TpmsDataStore;
 import com.abosultan.darbakos.core.TpmsSourceAdapter;
 import com.abosultan.darbakos.core.TpmsSourceSnapshot;
 import org.junit.Test;
@@ -71,5 +72,78 @@ public final class TpmsSourceContractTest {
         };
         assertEquals("proven-source", adapter.id());
         assertEquals(TpmsSourceSnapshot.State.DISCONNECTED, adapter.snapshot().state(1000L, 500L));
+    }
+
+    @Test public void storeMergesNewestConnectedReadingPerWheelAndKeepsSpareSeparate() {
+        TpmsDataStore store = new TpmsDataStore();
+        store.register(adapter("old", TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "old", 30.0, 800L),
+                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 36.0, 850L))));
+        store.register(adapter("new", TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "new", 35.0, 950L),
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 33.0, 940L))));
+
+        TpmsSourceSnapshot merged = store.snapshot();
+        assertEquals(TpmsSourceSnapshot.State.LIVE, merged.state(1000L, 500L));
+        assertEquals("new", merged.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT).sensorId);
+        assertEquals(35.0, merged.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT).pressurePsi, 0.001);
+        assertEquals(36.0, merged.reading(TpmsSourceSnapshot.Wheel.SPARE).pressurePsi, 0.001);
+        assertEquals(33.0, merged.reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT).pressurePsi, 0.001);
+    }
+
+    @Test public void faultedLastKnownReadingNeverOverridesConnectedSource() {
+        TpmsDataStore store = new TpmsDataStore();
+        store.register(adapter("fault", TpmsSourceSnapshot.error(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fault-old", 40.0, 990L))));
+        store.register(adapter("live", TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "live", 32.0, 900L))));
+
+        TpmsSourceSnapshot merged = store.snapshot();
+        assertEquals(TpmsSourceSnapshot.State.LIVE, merged.state(1000L, 500L));
+        assertEquals("live", merged.reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).sensorId);
+        assertEquals(32.0, merged.reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).pressurePsi, 0.001);
+    }
+
+    @Test public void allFaultedSourcesStayErrorAndMayKeepLastKnownEvidence() {
+        TpmsDataStore store = new TpmsDataStore();
+        store.register(adapter("fault", TpmsSourceSnapshot.error(
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "last-known", 31.0, 990L))));
+
+        TpmsSourceSnapshot merged = store.snapshot();
+        assertEquals(TpmsSourceSnapshot.State.ERROR, merged.state(1000L, 500L));
+        assertEquals("last-known", merged.reading(TpmsSourceSnapshot.Wheel.REAR_LEFT).sensorId);
+        assertFalse(merged.connected());
+        assertTrue(merged.faulted());
+    }
+
+    @Test public void throwingAdapterBecomesErrorInsteadOfDisappearing() {
+        TpmsDataStore store = new TpmsDataStore();
+        store.register(new TpmsSourceAdapter() {
+            public String id() { return "broken"; }
+            public TpmsSourceSnapshot snapshot() { throw new IllegalStateException("boom"); }
+        });
+        assertEquals(TpmsSourceSnapshot.State.ERROR, store.snapshot().state(1000L, 500L));
+    }
+
+    @Test public void connectedNoDataRemainsExplicitEvenWithAnotherFaultedSource() {
+        TpmsDataStore store = new TpmsDataStore();
+        store.register(adapter("connected", TpmsSourceSnapshot.connected()));
+        store.register(adapter("fault", TpmsSourceSnapshot.error(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "old", 29.0, 990L))));
+        TpmsSourceSnapshot merged = store.snapshot();
+        assertEquals(TpmsSourceSnapshot.State.CONNECTED_NO_DATA, merged.state(1000L, 500L));
+        assertNull(merged.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT));
+    }
+
+    private static TpmsSourceSnapshot.Reading reading(TpmsSourceSnapshot.Wheel wheel,
+                                                       String id, double psi, long observedAtMs) {
+        return new TpmsSourceSnapshot.Reading(wheel, id, psi, null, observedAtMs);
+    }
+
+    private static TpmsSourceAdapter adapter(final String id, final TpmsSourceSnapshot snapshot) {
+        return new TpmsSourceAdapter() {
+            public String id() { return id; }
+            public TpmsSourceSnapshot snapshot() { return snapshot; }
+        };
     }
 }
