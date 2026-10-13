@@ -57,10 +57,17 @@ public final class TpmsAlertPolicy {
             return false;
         }
 
-        public boolean spareVisualNotice() {
+        /** True only when the spare has a live low-pressure reading. */
+        public boolean spareLowPressureNotice() {
             WheelAlert spare = alerts.get(TpmsSourceSnapshot.Wheel.SPARE);
-            return spare != null && spare.active() && spare.visualOnly;
+            return spare != null
+                    && spare.state == TpmsDisplayModel.WheelState.LOW
+                    && spare.severity == Severity.INFO
+                    && spare.visualOnly;
         }
+
+        /** Compatibility alias; kept narrow so stale/missing spare data is not a pressure notice. */
+        public boolean spareVisualNotice() { return spareLowPressureNotice(); }
     }
 
     private TpmsAlertPolicy() { }
@@ -76,7 +83,7 @@ public final class TpmsAlertPolicy {
                     ? TpmsDisplayModel.WheelState.SOURCE_UNAVAILABLE : view.state;
             boolean spare = wheel == TpmsSourceSnapshot.Wheel.SPARE;
             Severity severity = severityFor(state, spare);
-            boolean visualOnly = spare && severity != Severity.NONE;
+            boolean visualOnly = spare && state == TpmsDisplayModel.WheelState.LOW;
             alerts.put(wheel, new WheelAlert(wheel, severity, visualOnly, state));
             if (severity.ordinal() > overall.ordinal()) overall = severity;
         }
