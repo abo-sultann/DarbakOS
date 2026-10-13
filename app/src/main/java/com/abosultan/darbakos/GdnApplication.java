@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import com.abosultan.darbakos.core.CommissioningState;
 import com.abosultan.darbakos.core.HardwareProfileDiagnostics;
+import com.abosultan.darbakos.core.TpmsAlertPolicy;
 import com.abosultan.darbakos.core.TpmsDisplayModel;
 import com.abosultan.darbakos.core.TpmsPanelText;
 import com.abosultan.darbakos.core.TpmsRuntime;
@@ -20,7 +21,9 @@ import java.util.WeakHashMap;
 /** Read-only binders for hardware commissioning diagnostics and TPMS vehicle display. */
 public final class GdnApplication extends Application {
     private static final String PROFILE_MARKER = "\nProfile ";
+    // Provisional display policy only; physical head-unit commissioning must validate freshness.
     private static final long TPMS_DISPLAY_FRESH_MS = 15L * 60L * 1000L;
+    // Provisional user policy, not an OEM-authoritative Toyota threshold.
     private static final double TPMS_LOW_PRESSURE_PSI = 25.0;
     private static final Map<Activity, View> BOUND_ADMIN_PANELS =
             Collections.synchronizedMap(new WeakHashMap<>());
@@ -100,9 +103,17 @@ public final class GdnApplication extends Application {
                 now,
                 TPMS_DISPLAY_FRESH_MS,
                 TPMS_LOW_PRESSURE_PSI);
+        TpmsAlertPolicy.Result alert = TpmsAlertPolicy.evaluate(model);
         pressure.setText(TpmsPanelText.pressure(model));
         temperature.setText(TpmsPanelText.temperature(model));
-        source.setText(TpmsPanelText.source(model));
+        source.setText(TpmsPanelText.source(model) + alertSuffix(alert));
+    }
+
+    private static String alertSuffix(TpmsAlertPolicy.Result alert) {
+        if (alert == null) return "";
+        if (alert.roadWarning()) return " • تحذير: ضغط منخفض في أحد الإطارات";
+        if (alert.spareVisualNotice()) return " • تنبيه بصري: افحص ضغط الاسبير";
+        return "";
     }
 
     static String withProfile(CharSequence deviceText,
