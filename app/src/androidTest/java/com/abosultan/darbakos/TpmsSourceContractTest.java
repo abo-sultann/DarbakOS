@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.abosultan.darbakos.core.TpmsAlertPolicy;
 import com.abosultan.darbakos.core.TpmsDataStore;
 import com.abosultan.darbakos.core.TpmsDisplayModel;
+import com.abosultan.darbakos.core.TpmsRuntime;
 import com.abosultan.darbakos.core.TpmsSourceAdapter;
 import com.abosultan.darbakos.core.TpmsSourceSnapshot;
 import org.junit.Test;
@@ -42,7 +43,6 @@ public final class TpmsSourceContractTest {
         TpmsSourceSnapshot stale = TpmsSourceSnapshot.connected(new TpmsSourceSnapshot.Reading(
                 TpmsSourceSnapshot.Wheel.SPARE, null, 30.0, 25.0, 100L));
         assertEquals(TpmsSourceSnapshot.State.STALE, stale.state(1000L, 500L));
-
         TpmsSourceSnapshot future = TpmsSourceSnapshot.connected(new TpmsSourceSnapshot.Reading(
                 TpmsSourceSnapshot.Wheel.SPARE, null, 30.0, null, 1100L));
         assertEquals(TpmsSourceSnapshot.State.STALE, future.state(1000L, 500L));
@@ -58,10 +58,8 @@ public final class TpmsSourceContractTest {
 
     @Test public void newestSampleWinsPerWheelWithoutInventingOtherWheels() {
         TpmsSourceSnapshot snapshot = TpmsSourceSnapshot.connected(
-                new TpmsSourceSnapshot.Reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT,
-                        "old", 30.0, null, 800L),
-                new TpmsSourceSnapshot.Reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT,
-                        "new", 35.0, 26.0, 950L));
+                new TpmsSourceSnapshot.Reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "old", 30.0, null, 800L),
+                new TpmsSourceSnapshot.Reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "new", 35.0, 26.0, 950L));
         assertEquals("new", snapshot.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT).sensorId);
         assertEquals(35.0, snapshot.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT).pressurePsi, 0.001);
         assertNull(snapshot.reading(TpmsSourceSnapshot.Wheel.REAR_LEFT));
@@ -84,7 +82,6 @@ public final class TpmsSourceContractTest {
         store.register(adapter("new", TpmsSourceSnapshot.connected(
                 reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "new", 35.0, 950L),
                 reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 33.0, 940L))));
-
         TpmsSourceSnapshot merged = store.snapshot();
         assertEquals(TpmsSourceSnapshot.State.LIVE, merged.state(1000L, 500L));
         assertEquals("new", merged.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT).sensorId);
@@ -99,7 +96,6 @@ public final class TpmsSourceContractTest {
                 reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fault-old", 40.0, 990L))));
         store.register(adapter("live", TpmsSourceSnapshot.connected(
                 reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "live", 32.0, 900L))));
-
         TpmsSourceSnapshot merged = store.snapshot();
         assertEquals(TpmsSourceSnapshot.State.LIVE, merged.state(1000L, 500L));
         assertEquals("live", merged.reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).sensorId);
@@ -110,7 +106,6 @@ public final class TpmsSourceContractTest {
         TpmsDataStore store = new TpmsDataStore();
         store.register(adapter("fault", TpmsSourceSnapshot.error(
                 reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "last-known", 31.0, 990L))));
-
         TpmsSourceSnapshot merged = store.snapshot();
         assertEquals(TpmsSourceSnapshot.State.ERROR, merged.state(1000L, 500L));
         assertEquals("last-known", merged.reading(TpmsSourceSnapshot.Wheel.REAR_LEFT).sensorId);
@@ -129,8 +124,7 @@ public final class TpmsSourceContractTest {
 
     @Test public void connectedNoDataRemainsExplicitEvenWithAnotherFaultedSource() {
         TpmsDataStore store = new TpmsDataStore();
-        store.register(adapter("connected", TpmsSourceSnapshot.connected(
-                new TpmsSourceSnapshot.Reading[0])));
+        store.register(adapter("connected", TpmsSourceSnapshot.connected(new TpmsSourceSnapshot.Reading[0])));
         store.register(adapter("fault", TpmsSourceSnapshot.error(
                 reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "old", 29.0, 990L))));
         TpmsSourceSnapshot merged = store.snapshot();
@@ -138,63 +132,92 @@ public final class TpmsSourceContractTest {
         assertNull(merged.reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT));
     }
 
+    @Test public void runtimeExposesFiveWheelSnapshotWithoutCollapsingSpare() {
+        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
+        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 34.0, 900L),
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 35.0, 910L),
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 33.0, 920L),
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 32.0, 930L),
+                reading(TpmsSourceSnapshot.Wheel.SPARE, "sp", 36.0, 940L))));
+        TpmsSourceSnapshot snapshot = runtime.snapshot();
+        assertEquals(5, snapshot.readings().size());
+        assertEquals(36.0, snapshot.reading(TpmsSourceSnapshot.Wheel.SPARE).pressurePsi, 0.001);
+        assertEquals(TpmsSourceSnapshot.State.LIVE, runtime.state(1000L, 500L));
+    }
+
+    @Test public void runtimeLiveReadingRejectsStaleAndFutureSamples() {
+        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
+        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "stale", 30.0, 100L),
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "future", 31.0, 1100L))));
+        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, 1000L, 500L));
+        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, 1000L, 500L));
+        assertNotNull(runtime.snapshot().reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT));
+    }
+
+    @Test public void runtimeLiveReadingRejectsFaultedLastKnownEvidence() {
+        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
+        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.error(
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "last", 29.0, 990L))));
+        assertEquals(TpmsSourceSnapshot.State.ERROR, runtime.state(1000L, 500L));
+        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.REAR_LEFT, 1000L, 500L));
+        assertNotNull(runtime.snapshot().reading(TpmsSourceSnapshot.Wheel.REAR_LEFT));
+    }
+
+    @Test public void runtimeUnregisterReturnsToDisconnected() {
+        TpmsRuntime runtime = new TpmsRuntime(new TpmsDataStore());
+        runtime.registerSource(adapter("tpms", TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 33.0, 990L))));
+        assertNotNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, 1000L, 500L));
+        runtime.unregisterSource("tpms");
+        assertEquals(TpmsSourceSnapshot.State.DISCONNECTED, runtime.state(1000L, 500L));
+        assertNull(runtime.liveReading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, 1000L, 500L));
+    }
+
     @Test public void displayModelAlwaysExposesFiveIndependentWheelPositions() {
         TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
-                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 32.0, 990L)),
-                1000L, 500L, 25.0);
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 32.0, 990L)), 1000L, 500L, 25.0);
         assertEquals(5, model.wheels().size());
-        assertEquals(TpmsDisplayModel.WheelState.LIVE,
-                model.wheel(TpmsSourceSnapshot.Wheel.FRONT_LEFT).state);
-        assertEquals(TpmsDisplayModel.WheelState.NO_DATA,
-                model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).state);
+        assertEquals(TpmsDisplayModel.WheelState.LIVE, model.wheel(TpmsSourceSnapshot.Wheel.FRONT_LEFT).state);
+        assertEquals(TpmsDisplayModel.WheelState.NO_DATA, model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).state);
         assertTrue(model.wheel(TpmsSourceSnapshot.Wheel.SPARE).spare());
     }
 
     @Test public void displayModelMarksLowPressureWithoutCollapsingSpareIntoRoadTires() {
         TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
                 reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 24.5, 990L),
-                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 23.0, 995L)),
-                1000L, 500L, 25.0);
-        assertEquals(TpmsDisplayModel.WheelState.LOW,
-                model.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).state);
-        assertEquals(TpmsDisplayModel.WheelState.LOW,
-                model.wheel(TpmsSourceSnapshot.Wheel.SPARE).state);
+                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 23.0, 995L)), 1000L, 500L, 25.0);
+        assertEquals(TpmsDisplayModel.WheelState.LOW, model.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).state);
+        assertEquals(TpmsDisplayModel.WheelState.LOW, model.wheel(TpmsSourceSnapshot.Wheel.SPARE).state);
         assertFalse(model.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).spare());
         assertTrue(model.wheel(TpmsSourceSnapshot.Wheel.SPARE).spare());
     }
 
     @Test public void displayModelNeverLabelsStaleEvidenceLive() {
         TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
-                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 33.0, 100L)),
-                1000L, 500L, 25.0);
-        assertEquals(TpmsDisplayModel.WheelState.STALE,
-                model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).state);
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 33.0, 100L)), 1000L, 500L, 25.0);
+        assertEquals(TpmsDisplayModel.WheelState.STALE, model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).state);
         assertFalse(model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).live());
-        assertEquals(33.0,
-                model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).pressurePsi, 0.001);
+        assertEquals(33.0, model.wheel(TpmsSourceSnapshot.Wheel.REAR_RIGHT).pressurePsi, 0.001);
     }
 
     @Test public void displayModelKeepsFaultEvidenceExplicitlyUnavailable() {
         TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.error(
-                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "last", 30.0, 990L)),
-                1000L, 500L, 25.0);
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "last", 30.0, 990L)), 1000L, 500L, 25.0);
         assertEquals(TpmsSourceSnapshot.State.ERROR, model.sourceState);
-        assertEquals(TpmsDisplayModel.WheelState.SOURCE_UNAVAILABLE,
-                model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).state);
+        assertEquals(TpmsDisplayModel.WheelState.SOURCE_UNAVAILABLE, model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).state);
         assertFalse(model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).live());
-        assertEquals(30.0,
-                model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).pressurePsi, 0.001);
+        assertEquals(30.0, model.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).pressurePsi, 0.001);
     }
 
     @Test public void roadLowPressureRaisesWarning() {
         TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
-                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 24.0, 990L)),
-                1000L, 500L, 25.0);
+                reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 24.0, 990L)), 1000L, 500L, 25.0);
         TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
         assertEquals(TpmsAlertPolicy.Severity.WARNING, result.severity);
         assertTrue(result.roadWarning());
-        assertEquals(TpmsAlertPolicy.Severity.WARNING,
-                result.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).severity);
+        assertEquals(TpmsAlertPolicy.Severity.WARNING, result.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).severity);
         assertFalse(result.wheel(TpmsSourceSnapshot.Wheel.FRONT_RIGHT).visualOnly);
     }
 
@@ -204,8 +227,7 @@ public final class TpmsSourceContractTest {
                 reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, "fl", 32.0, 990L),
                 reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 32.0, 990L),
                 reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 32.0, 990L),
-                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 32.0, 990L)),
-                1000L, 500L, 25.0);
+                reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 32.0, 990L)), 1000L, 500L, 25.0);
         TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
         assertEquals(TpmsAlertPolicy.Severity.INFO, result.severity);
         assertFalse(result.roadWarning());
@@ -215,13 +237,11 @@ public final class TpmsSourceContractTest {
 
     @Test public void staleOrMissingDataIsInformationalNotPressureEmergency() {
         TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
-                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 31.0, 100L)),
-                1000L, 500L, 25.0);
+                reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 31.0, 100L)), 1000L, 500L, 25.0);
         TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
         assertEquals(TpmsAlertPolicy.Severity.INFO, result.severity);
         assertFalse(result.roadWarning());
-        assertEquals(TpmsAlertPolicy.Severity.INFO,
-                result.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).severity);
+        assertEquals(TpmsAlertPolicy.Severity.INFO, result.wheel(TpmsSourceSnapshot.Wheel.REAR_LEFT).severity);
     }
 
     @Test public void healthyFiveWheelSnapshotHasNoAlert() {
@@ -230,8 +250,7 @@ public final class TpmsSourceContractTest {
                 reading(TpmsSourceSnapshot.Wheel.FRONT_RIGHT, "fr", 32.0, 990L),
                 reading(TpmsSourceSnapshot.Wheel.REAR_LEFT, "rl", 32.0, 990L),
                 reading(TpmsSourceSnapshot.Wheel.REAR_RIGHT, "rr", 32.0, 990L),
-                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 35.0, 990L)),
-                1000L, 500L, 25.0);
+                reading(TpmsSourceSnapshot.Wheel.SPARE, "spare", 35.0, 990L)), 1000L, 500L, 25.0);
         TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
         assertEquals(TpmsAlertPolicy.Severity.NONE, result.severity);
         assertFalse(result.roadWarning());
