@@ -87,6 +87,25 @@ public final class TpmsAlertPolicyContractTest {
         assertFalse(result.spareLowPressureNotice());
     }
 
+    @Test public void roadAndSpareLowPressureStayIndependentlyVisible() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
+                reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, 24.0, 990L),
+                reading(TpmsSourceSnapshot.Wheel.SPARE, 22.0, 995L)),
+                1000L, 500L, 25.0);
+
+        TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
+
+        assertEquals(TpmsAlertPolicy.Severity.WARNING, result.severity);
+        assertTrue(result.roadWarning());
+        assertTrue(result.spareLowPressureNotice());
+        assertTrue(result.spareVisualNotice());
+        assertEquals(TpmsAlertPolicy.Severity.WARNING,
+                result.wheel(TpmsSourceSnapshot.Wheel.FRONT_LEFT).severity);
+        assertEquals(TpmsAlertPolicy.Severity.INFO,
+                result.wheel(TpmsSourceSnapshot.Wheel.SPARE).severity);
+        assertTrue(result.wheel(TpmsSourceSnapshot.Wheel.SPARE).visualOnly);
+    }
+
     private static TpmsSourceSnapshot.Reading reading(TpmsSourceSnapshot.Wheel wheel,
                                                        double psi,
                                                        long observedAtMs) {
