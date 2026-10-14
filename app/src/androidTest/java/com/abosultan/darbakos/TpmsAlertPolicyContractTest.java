@@ -44,6 +44,23 @@ public final class TpmsAlertPolicyContractTest {
         assertFalse(result.spareVisualNotice());
     }
 
+    @Test public void noDataSpareNeverLooksLikeLowPressureNotice() {
+        TpmsDisplayModel model = TpmsDisplayModel.from(
+                TpmsSourceSnapshot.connected(new TpmsSourceSnapshot.Reading[0]),
+                1000L, 500L, 25.0);
+
+        TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(model);
+
+        assertEquals(TpmsDisplayModel.WheelState.NO_DATA,
+                result.wheel(TpmsSourceSnapshot.Wheel.SPARE).state);
+        assertEquals(TpmsAlertPolicy.Severity.INFO,
+                result.wheel(TpmsSourceSnapshot.Wheel.SPARE).severity);
+        assertFalse(result.wheel(TpmsSourceSnapshot.Wheel.SPARE).visualOnly);
+        assertFalse(result.spareLowPressureNotice());
+        assertFalse(result.spareVisualNotice());
+        assertFalse(result.roadWarning());
+    }
+
     @Test public void unavailableSpareNeverLooksLikeLowPressureNotice() {
         TpmsDisplayModel model = TpmsDisplayModel.from(
                 TpmsSourceSnapshot.disconnected(), 1000L, 500L, 25.0);
