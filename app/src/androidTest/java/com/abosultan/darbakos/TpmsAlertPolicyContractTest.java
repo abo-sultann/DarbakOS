@@ -74,6 +74,19 @@ public final class TpmsAlertPolicyContractTest {
         assertFalse(result.roadWarning());
     }
 
+    @Test public void missingModelFailsSafeWithoutInventingPressureEmergency() {
+        TpmsAlertPolicy.Result result = TpmsAlertPolicy.evaluate(null);
+
+        assertEquals(TpmsAlertPolicy.Severity.INFO, result.severity);
+        assertFalse(result.roadWarning());
+        assertFalse(result.spareLowPressureNotice());
+        assertEquals(5, result.alerts().size());
+        for (TpmsSourceSnapshot.Wheel wheel : TpmsSourceSnapshot.Wheel.values()) {
+            assertEquals(TpmsDisplayModel.WheelState.SOURCE_UNAVAILABLE,
+                    result.wheel(wheel).state);
+        }
+    }
+
     @Test public void roadWarningOutranksInformationalWheelStates() {
         TpmsDisplayModel model = TpmsDisplayModel.from(TpmsSourceSnapshot.connected(
                 reading(TpmsSourceSnapshot.Wheel.FRONT_LEFT, 24.0, 990L),
