@@ -104,6 +104,9 @@ public final class TpmsAlertPolicyContractTest {
         assertEquals(TpmsAlertPolicy.Severity.INFO,
                 result.wheel(TpmsSourceSnapshot.Wheel.SPARE).severity);
         assertTrue(result.wheel(TpmsSourceSnapshot.Wheel.SPARE).visualOnly);
+        String suffix = GdnApplication.alertSuffix(result);
+        assertTrue(suffix.contains("تحذير: ضغط منخفض في أحد الإطارات"));
+        assertTrue(suffix.contains("تنبيه بصري: افحص ضغط الاسبير"));
     }
 
     private static TpmsSourceSnapshot.Reading reading(TpmsSourceSnapshot.Wheel wheel,

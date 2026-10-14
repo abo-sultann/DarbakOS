@@ -106,11 +106,12 @@ public final class GdnApplication extends Application {
         source.setText(TpmsPanelText.source(model) + alertSuffix(alert));
     }
 
-    private static String alertSuffix(TpmsAlertPolicy.Result alert) {
+    static String alertSuffix(TpmsAlertPolicy.Result alert) {
         if (alert == null) return "";
-        if (alert.roadWarning()) return " • تحذير: ضغط منخفض في أحد الإطارات";
-        if (alert.spareLowPressureNotice()) return " • تنبيه بصري: افحص ضغط الاسبير";
-        return "";
+        StringBuilder suffix = new StringBuilder();
+        if (alert.roadWarning()) suffix.append(" • تحذير: ضغط منخفض في أحد الإطارات");
+        if (alert.spareLowPressureNotice()) suffix.append(" • تنبيه بصري: افحص ضغط الاسبير");
+        return suffix.toString();
     }
 
     static String withProfile(CharSequence deviceText,
