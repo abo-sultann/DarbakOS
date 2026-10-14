@@ -85,10 +85,16 @@ public final class TpmsAlertPolicy {
             Severity severity = severityFor(state, spare);
             boolean visualOnly = spare && state == TpmsDisplayModel.WheelState.LOW;
             alerts.put(wheel, new WheelAlert(wheel, severity, visualOnly, state));
-            if (severity.ordinal() > overall.ordinal()) overall = severity;
+            overall = maxSeverity(overall, severity);
         }
 
         return new Result(overall, alerts);
+    }
+
+    private static Severity maxSeverity(Severity left, Severity right) {
+        if (left == Severity.WARNING || right == Severity.WARNING) return Severity.WARNING;
+        if (left == Severity.INFO || right == Severity.INFO) return Severity.INFO;
+        return Severity.NONE;
     }
 
     private static Severity severityFor(TpmsDisplayModel.WheelState state, boolean spare) {
