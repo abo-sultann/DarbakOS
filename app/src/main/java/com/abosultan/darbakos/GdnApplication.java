@@ -86,7 +86,13 @@ public final class GdnApplication extends Application {
                 CommissioningState.current()));
     }
 
+    /** Explicit UI hook so section navigation can render TPMS without relying on layout timing. */
+    public static void renderTpmsPanel(Activity activity) {
+        renderTpmsIfVisible(activity);
+    }
+
     private static void renderTpmsIfVisible(Activity activity) {
+        if (activity == null) return;
         View panel = activity.findViewById(R.id.vehicle_panel);
         TextView pressure = activity.findViewById(R.id.vehicle_pressure);
         TextView temperature = activity.findViewById(R.id.vehicle_tire_temperature);
