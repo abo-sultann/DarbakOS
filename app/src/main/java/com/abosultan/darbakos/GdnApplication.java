@@ -72,7 +72,7 @@ public final class GdnApplication extends Application {
         BOUND_VEHICLE_PANELS.put(activity, panel);
         panel.addOnLayoutChangeListener((view, left, top, right, bottom,
                                          oldLeft, oldTop, oldRight, oldBottom) ->
-                renderTpmsIfVisible(activity));
+                view.post(() -> renderTpmsIfVisible(activity)));
         renderTpmsIfVisible(activity);
     }
 
